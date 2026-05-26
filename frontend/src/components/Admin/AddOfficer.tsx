@@ -1,0 +1,348 @@
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { BadgeCheck, Plus, Shield } from "lucide-react"
+import { useState } from "react"
+import { useForm } from "react-hook-form"
+import { z } from "zod"
+
+import { type UserCreate, UsersService } from "@/client"
+import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { LoadingButton } from "@/components/ui/loading-button"
+import useCustomToast from "@/hooks/useCustomToast"
+import { handleError } from "@/utils"
+
+const formSchema = z
+  .object({
+    email: z.email({
+      message: "Invalid officer email address",
+    }),
+
+    full_name: z.string().optional(),
+
+    password: z
+      .string()
+      .min(1, {
+        message: "Password is required",
+      })
+      .min(8, {
+        message:
+          "Password must contain at least 8 characters",
+      }),
+
+    confirm_password: z
+      .string()
+      .min(1, {
+        message: "Please confirm your password",
+      }),
+
+    is_superuser: z.boolean(),
+
+    is_active: z.boolean(),
+  })
+  .refine(
+    (data) => data.password === data.confirm_password,
+    {
+      message: "Password confirmation does not match",
+      path: ["confirm_password"],
+    },
+  )
+
+type FormData = z.infer<typeof formSchema>
+
+const AddUser = () => {
+  const [isOpen, setIsOpen] = useState(false)
+
+  const queryClient = useQueryClient()
+
+  const { showSuccessToast, showErrorToast } =
+    useCustomToast()
+
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+
+    mode: "onBlur",
+
+    criteriaMode: "all",
+
+    defaultValues: {
+      email: "",
+      full_name: "",
+      password: "",
+      confirm_password: "",
+      is_superuser: false,
+      is_active: true,
+    },
+  })
+
+  const mutation = useMutation({
+    mutationFn: (data: UserCreate) =>
+      UsersService.createUser({
+        requestBody: data,
+      }),
+
+    onSuccess: () => {
+      showSuccessToast(
+        "Traffic officer account created successfully",
+      )
+
+      form.reset()
+
+      setIsOpen(false)
+    },
+
+    onError: handleError.bind(showErrorToast),
+
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["users"],
+      })
+    },
+  })
+
+  const onSubmit = (data: FormData) => {
+    mutation.mutate(data)
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button className="my-4">
+          <Plus className="mr-2 h-4 w-4" />
+
+          Add Traffic Officer
+        </Button>
+      </DialogTrigger>
+
+      <DialogContent className="sm:max-w-md">
+        {/* HEADER */}
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5 text-cyan-400" />
+
+            Register Traffic Officer
+          </DialogTitle>
+
+          <DialogDescription>
+            Create a new officer account for the AI
+            traffic monitoring and vehicle recognition
+            system.
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* FORM */}
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+          >
+            <div className="grid gap-4 py-4">
+              {/* EMAIL */}
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Officer Email{" "}
+                      <span className="text-destructive">
+                        *
+                      </span>
+                    </FormLabel>
+
+                    <FormControl>
+                      <Input
+                        placeholder="officer@traffic.gov"
+                        type="email"
+                        {...field}
+                        required
+                      />
+                    </FormControl>
+
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* FULL NAME */}
+              <FormField
+                control={form.control}
+                name="full_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Officer Name
+                    </FormLabel>
+
+                    <FormControl>
+                      <Input
+                        placeholder="Officer full name"
+                        type="text"
+                        {...field}
+                      />
+                    </FormControl>
+
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* PASSWORD */}
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Create Password{" "}
+                      <span className="text-destructive">
+                        *
+                      </span>
+                    </FormLabel>
+
+                    <FormControl>
+                      <Input
+                        placeholder="Enter secure password"
+                        type="password"
+                        {...field}
+                        required
+                      />
+                    </FormControl>
+
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* CONFIRM PASSWORD */}
+              <FormField
+                control={form.control}
+                name="confirm_password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Confirm Password{" "}
+                      <span className="text-destructive">
+                        *
+                      </span>
+                    </FormLabel>
+
+                    <FormControl>
+                      <Input
+                        placeholder="Confirm secure password"
+                        type="password"
+                        {...field}
+                        required
+                      />
+                    </FormControl>
+
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* ADMIN */}
+              <FormField
+                control={form.control}
+                name="is_superuser"
+                render={({ field }) => (
+                  <FormItem className="flex items-center gap-3 space-y-0 rounded-xl border border-white/10 p-4">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={
+                          field.onChange
+                        }
+                      />
+                    </FormControl>
+
+                    <div>
+                      <FormLabel className="font-medium">
+                        Administrator Access
+                      </FormLabel>
+
+                      <p className="text-sm text-muted-foreground">
+                        Grant full system monitoring and
+                        management permissions.
+                      </p>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              {/* ACTIVE */}
+              <FormField
+                control={form.control}
+                name="is_active"
+                render={({ field }) => (
+                  <FormItem className="flex items-center gap-3 space-y-0 rounded-xl border border-white/10 p-4">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={
+                          field.onChange
+                        }
+                      />
+                    </FormControl>
+
+                    <div>
+                      <FormLabel className="font-medium">
+                        Enable Officer Account
+                      </FormLabel>
+
+                      <p className="text-sm text-muted-foreground">
+                        Allow this officer to access the
+                        AI traffic monitoring dashboard.
+                      </p>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* FOOTER */}
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button
+                  variant="outline"
+                  disabled={mutation.isPending}
+                >
+                  Cancel Registration
+                </Button>
+              </DialogClose>
+
+              <LoadingButton
+                type="submit"
+                loading={mutation.isPending}
+              >
+                <BadgeCheck className="mr-2 h-4 w-4" />
+
+                Create Officer
+              </LoadingButton>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+export default AddUser
