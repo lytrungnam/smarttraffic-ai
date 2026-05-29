@@ -106,7 +106,7 @@ app.add_middleware(
 # =========================
 # HEALTH CHECK
 # =========================
-@app.get("/health")
+@app.get("/health", tags=["utils"])
 def health():
     return {"status": "ok"}
 
