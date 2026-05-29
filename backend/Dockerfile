@@ -27,5 +27,6 @@ RUN pip install --upgrade pip
 RUN pip install uv
 RUN uv pip install --system .
 
-# Chạy server
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Chạy server với PORT từ environment (default 8000)
+CMD sh -c "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"
+
