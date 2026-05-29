@@ -5,7 +5,10 @@ from app.core.config import settings
 from app.models import Detection
 from app.models.user import User, UserCreate
 
-engine = create_engine(str(settings.SQLALCHEMY_DATABASE_URI))
+engine = create_engine(
+    str(settings.SQLALCHEMY_DATABASE_URI),
+    connect_args={"connect_timeout": 10},
+)
 
 
 # make sure all SQLModel models are imported (app.models) before initializing DB
