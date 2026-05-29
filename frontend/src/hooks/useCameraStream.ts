@@ -30,8 +30,8 @@ export type CameraStreamError = null | "daily_limit" | "camera_limit" | "connect
 
 export type CameraStreamResult = {
   streamUrl: string
-  canvasRef: React.RefObject<HTMLCanvasElement>
-  containerRef: React.RefObject<HTMLDivElement>
+  canvasRef: React.RefObject<HTMLCanvasElement | null>
+  containerRef: React.RefObject<HTMLDivElement | null>
   isConnected: boolean
   tracks: CameraTrack[]
   processingMs: number
