@@ -78,21 +78,20 @@ def _sync_init_db() -> None:
         init_db(session)
 
 
-@app.on_event("startup")
-async def startup_event():
-    loop = asyncio.get_event_loop()
+async def _background_init_db() -> None:
+    loop = asyncio.get_running_loop()
     try:
-        await asyncio.wait_for(
-            loop.run_in_executor(None, _sync_init_db),
-            timeout=30,
-        )
+        await loop.run_in_executor(None, _sync_init_db)
+        print("[STARTUP] DB init complete")
     except Exception as exc:
         print(f"[STARTUP] DB init error: {exc}")
 
-    # start realtime AI engine
-    asyncio.create_task(
-        real_ai_detection_loop()
-    )
+
+@app.on_event("startup")
+async def startup_event():
+    # Fire-and-forget: never block startup
+    asyncio.create_task(_background_init_db())
+    asyncio.create_task(real_ai_detection_loop())
 
 
 # =========================
