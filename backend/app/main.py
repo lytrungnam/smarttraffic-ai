@@ -104,6 +104,14 @@ app.add_middleware(
 
 
 # =========================
+# HEALTH CHECK
+# =========================
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
+# =========================
 # API ROUTES
 # =========================
 app.include_router(

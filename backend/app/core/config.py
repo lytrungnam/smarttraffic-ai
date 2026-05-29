@@ -50,15 +50,26 @@ class Settings(BaseSettings):
 
     PROJECT_NAME: str
     SENTRY_DSN: HttpUrl | None = None
-    POSTGRES_SERVER: str
+    # Railway provides a single DATABASE_URL — takes priority over individual vars
+    DATABASE_URL: str | None = None
+
+    POSTGRES_SERVER: str = "localhost"
     POSTGRES_PORT: int = 5432
-    POSTGRES_USER: str
+    POSTGRES_USER: str = "postgres"
     POSTGRES_PASSWORD: str = ""
     POSTGRES_DB: str = ""
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> PostgresDsn:
+        if self.DATABASE_URL:
+            # Railway gives postgresql:// — psycopg3 needs postgresql+psycopg://
+            url = self.DATABASE_URL.replace(
+                "postgresql://", "postgresql+psycopg://", 1
+            ).replace(
+                "postgres://", "postgresql+psycopg://", 1
+            )
+            return PostgresDsn(url)
         return PostgresDsn.build(
             scheme="postgresql+psycopg",
             username=self.POSTGRES_USER,
