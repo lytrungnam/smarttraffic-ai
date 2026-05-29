@@ -5,7 +5,8 @@ let socket: WebSocket | null = null
 export const connectDetectionSocket = (
   onMessage: (data: DetectionRealtimePayload) => void,
 ) => {
-  socket = new WebSocket("ws://127.0.0.1:8000/api/v1/ws/detections")
+  const wsBase = (import.meta.env.VITE_API_URL ?? "http://localhost:8000").replace(/^http/, "ws")
+  socket = new WebSocket(`${wsBase}/api/v1/ws/detections`)
 
   socket.onopen = () => {
     console.log("✅ WebSocket Connected")

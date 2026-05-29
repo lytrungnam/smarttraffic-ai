@@ -35,7 +35,8 @@ function DetectionPage() {
     if (Array.isArray(msg.events)) setEvents(msg.events as TrackEvent[])
   }, [])
 
-  useWebSocket("ws://127.0.0.1:8000/api/v1/ws/detections", handleWsMessage)
+  const wsUrl = `${(import.meta.env.VITE_API_URL ?? "http://localhost:8000").replace(/^http/, "ws")}/api/v1/ws/detections`
+  useWebSocket(wsUrl, handleWsMessage)
 
   return (
     <div

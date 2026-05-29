@@ -70,7 +70,8 @@ export default function DetectionRealtime() {
     setRealtimeFeed((current) => [...incoming, ...current].slice(0, 6))
   }, [])
 
-  useWebSocket("ws://127.0.0.1:8000/api/v1/ws/detections", handleWsMessage)
+  const wsUrl = `${(import.meta.env.VITE_API_URL ?? "http://localhost:8000").replace(/^http/, "ws")}/api/v1/ws/detections`
+  useWebSocket(wsUrl, handleWsMessage)
 
   return (
     <div className="overflow-hidden rounded-3xl border border-white/10 bg-zinc-950 shadow-2xl">
