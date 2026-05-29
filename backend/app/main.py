@@ -72,13 +72,22 @@ app.mount(
 # =========================
 # STARTUP EVENT
 # =========================
-@app.on_event("startup")
-async def startup_event():
+def _sync_init_db() -> None:
     from sqlmodel import Session
-
-    # create PostgreSQL tables + seed first superuser
     with Session(engine) as session:
         init_db(session)
+
+
+@app.on_event("startup")
+async def startup_event():
+    loop = asyncio.get_event_loop()
+    try:
+        await asyncio.wait_for(
+            loop.run_in_executor(None, _sync_init_db),
+            timeout=30,
+        )
+    except Exception as exc:
+        print(f"[STARTUP] DB init error: {exc}")
 
     # start realtime AI engine
     asyncio.create_task(
