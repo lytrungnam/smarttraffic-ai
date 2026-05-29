@@ -19,6 +19,14 @@ dependencies = [
     "sentry-sdk[fastapi]>=2.0.0,<3.0.0",
     "pyjwt<3.0.0,>=2.8.0",
     "pwdlib[argon2,bcrypt]>=0.3.0",
+    "opencv-python-headless>=4.13.0.92",
+    "numpy>=2.2.6",
+    "ultralytics>=8.4.56",
+    "easyocr>=1.7.2",
+    "scipy>=1.15.3",
+    "web3>=7.16.0",
+    "eth-account>=0.13.7",
+    "filterpy>=1.4.5",
 ]
 
 [dependency-groups]
