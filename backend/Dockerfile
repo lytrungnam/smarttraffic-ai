@@ -12,20 +12,18 @@ WORKDIR /app/
 
 ENV PATH="/app/.venv/bin:$PATH"
 
-# Copy dependency files first (for layer caching)
-COPY ./backend/pyproject.toml ./backend/uv.lock /app/
+# Copy dependency files (paths relative to backend/ build context)
+COPY pyproject.toml uv.lock /app/
 
 # Install dependencies
 RUN uv sync --frozen --no-install-workspace --package app
 
 # Copy application code
-COPY ./backend/scripts /app/backend/scripts
-COPY ./backend/pyproject.toml ./backend/alembic.ini /app/backend/
-COPY ./backend/app /app/backend/app
+COPY scripts /app/scripts
+COPY pyproject.toml alembic.ini /app/
+COPY app /app/app
 
 # Final sync
 RUN uv sync --frozen --package app
-
-WORKDIR /app/backend/
 
 CMD ["fastapi", "run", "--workers", "4", "app/main.py"]
