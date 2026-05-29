@@ -28,8 +28,8 @@ RUN pip install --upgrade pip
 RUN pip install uv
 RUN uv pip install --system .
 
-# Pre-download EasyOCR models during build so they are cached in the image
-RUN python -c "import easyocr; easyocr.Reader(['en'], gpu=False)"
+# Pre-download EasyOCR models into a fixed path so they are found at runtime
+RUN python -c "import easyocr; easyocr.Reader(['en'], gpu=False, model_storage_directory='/app/.EasyOCR')"
 
 RUN chmod +x /app/start.sh
 

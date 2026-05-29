@@ -9,6 +9,7 @@ import easyocr
 reader = easyocr.Reader(
     ["en"],
     gpu=False,
+    model_storage_directory="/app/.EasyOCR",
 )
 
 # =====================================
