@@ -18,6 +18,7 @@ COPY pyproject.toml .
 COPY alembic.ini .
 COPY app ./app
 COPY scripts ./scripts
+COPY start.sh .
 
 # Tạo thư mục storage cho StaticFiles
 RUN mkdir -p /app/storage/detections
@@ -27,5 +28,6 @@ RUN pip install --upgrade pip
 RUN pip install uv
 RUN uv pip install --system .
 
-# Chạy server
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+RUN chmod +x /app/start.sh
+
+CMD ["/app/start.sh"]
