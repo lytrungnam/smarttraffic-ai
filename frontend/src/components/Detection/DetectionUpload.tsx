@@ -11,7 +11,7 @@ import {
 } from "lucide-react"
 import { useRef, useState } from "react"
 
-const API_URL = "http://localhost:8000/api/v1"
+const API_URL = `${import.meta.env.VITE_API_URL ?? "http://localhost:8000"}/api/v1`
 
 type UploadResult = {
   plate_number: string

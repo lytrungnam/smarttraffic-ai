@@ -171,7 +171,7 @@ export default function DetectionCamera({ tracks = [], events = [] }: Props) {
       {/* STREAM + CANVAS */}
       <div ref={containerRef} className="relative h-[50vh] min-h-[300px] overflow-hidden md:h-[560px] lg:h-[700px]">
         <img
-          src="http://localhost:8000/api/v1/detections/stream"
+          src={`${import.meta.env.VITE_API_URL ?? "http://localhost:8000"}/api/v1/detections/stream`}
           alt="camera-stream"
           className="h-full w-full object-cover"
         />
