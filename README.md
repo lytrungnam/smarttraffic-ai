@@ -1,299 +1,380 @@
-# SmartTraffic AI 🚦
+# 🚗 SmartTraffic AI — Hệ Thống Nhận Diện Phương Tiện
 
-Hệ thống giám sát phương tiện và nhận diện biển số xe theo thời gian thực sử dụng Deep Learning và Computer Vision.
-
----
-
-# 📌 Giới thiệu
-
-SmartTraffic AI là hệ thống AI hỗ trợ:
-
-* Phát hiện phương tiện giao thông realtime
-* Nhận diện biển số xe tự động
-* OCR nhận diện ký tự biển số
-* Giám sát camera/webcam/video
-* Dashboard quản lý dữ liệu
-* WebSocket realtime detection
-* Lưu lịch sử nhận diện vào PostgreSQL
-* Quản lý dữ liệu qua Admin Dashboard
-
-Hệ thống được xây dựng theo kiến trúc Full Stack AI Application sử dụng FastAPI + React + Docker.
+Hệ thống nhận diện phương tiện và biển số xe thời gian thực sử dụng **YOLOv5 + EasyOCR + FastAPI + React**. Backend xử lý video liên tục, phát hiện xe và đọc biển số, lưu vào PostgreSQL và đẩy kết quả lên frontend qua WebSocket.
 
 ---
 
-# 🧠 AI Pipeline
+## ⚙️ Yêu cầu cài đặt
 
-```text
-Input Image / Video
-        ↓
-Vehicle Detection (YOLOv5)
-        ↓
-Vehicle Cropping
-        ↓
-License Plate Detection
-        ↓
-Plate Cropping
-        ↓
-OCR Recognition
-        ↓
-Database Storage
-        ↓
-Realtime Frontend Dashboard
-```
+| Phần mềm | Phiên bản tối thiểu | Link tải |
+|----------|---------------------|----------|
+| **Docker Desktop** | Mới nhất | https://www.docker.com/products/docker-desktop |
+| **Node.js** | >= 18.0 | https://nodejs.org |
+| **Python** | >= 3.10 | https://www.python.org/downloads |
+| **uv** | Mới nhất | https://docs.astral.sh/uv |
+| **Git** | Mới nhất | https://git-scm.com |
+| **Bun** (tuỳ chọn) | >= 1.0 | https://bun.sh |
+
+> 💡 Nếu chỉ chạy bằng Docker thì **không cần** cài Node.js, Python hay uv riêng.
 
 ---
 
-# 🚀 Công nghệ sử dụng
-
-## 🔹 Backend
-
-* FastAPI
-* SQLModel
-* PostgreSQL
-* WebSocket
-* Alembic
-* Docker
-
-## 🔹 Frontend
-
-* React
-* TypeScript
-* Vite
-* TailwindCSS
-* shadcn/ui
-
-## 🔹 AI / Computer Vision
-
-* YOLOv5
-* OpenCV
-* EasyOCR
-* NumPy
-
-
-# 📱 Progressive Web App (PWA)
-
-Hệ thống hỗ trợ Progressive Web Application (PWA), cho phép:
-
-* Cài đặt ứng dụng trực tiếp trên điện thoại hoặc desktop
-* Hoạt động như ứng dụng native
-* Hỗ trợ trải nghiệm đa nền tảng
-* Tối ưu cho mobile devices
-* Hỗ trợ chạy fullscreen sau khi cài đặt
-
-Người dùng có thể thêm ứng dụng vào màn hình chính thông qua trình duyệt:
-
-```text id="v4v2ec"
-Add to Home Screen
-```
-
-Công nghệ sử dụng:
-
-* Vite PWA Plugin
-* React
-* TypeScript
-* Service Worker
-
----
-
-# 📂 Cấu trúc dự án
-
-
-SmartTraffic-AI/
-│
-├── backend/                     # FastAPI Backend
-│   ├── app/
-│   │   ├── api/                # API Routes
-│   │   ├── core/               # Config, Security
-│   │   ├── crud/               # Database CRUD
-│   │   ├── models/             # SQLModel Database Models
-│   │   ├── schemas/            # Pydantic Schemas
-│   │   ├── services/           # Business Logic
-│   │   └── main.py             # FastAPI Entry
-│   ├── scripts/
-│   ├── Dockerfile
-│   └── requirements.txt
-│
-├── frontend/                    # React Frontend
-│   ├── public/
-│   ├── src/
-│   │   ├── components/         # UI Components
-│   │   ├── routes/             # Application Routes
-│   │   ├── hooks/              # Custom Hooks
-│   │   ├── lib/                # Utilities
-│   │   ├── client/             # API Client
-│   │   └── main.tsx
-│   ├── Dockerfile
-│   ├── package.json
-│   └── vite.config.ts
-│
-├── hooks/                       # Git Hooks / Project Hooks
-├── img/                         # Images & Assets
-├── scripts/                     # Deployment Scripts
-│
-├── compose.yml                  # Main Docker Compose
-├── compose.override.yml         # Local Development Config
-├── compose.traefik.yml          # Traefik Production Config
-│
-├── .env                         # Environment Variables
-├── .gitignore
-├── README.md
-├── LICENSE
-├── pyproject.toml
-├── package.json
-└── bun.lock
-```
-
-
----
-
-# ⚡ Chạy dự án bằng Docker
-
-## 1️⃣ Clone project
+## 🚀 Chạy bằng Docker (Khuyên dùng)
 
 ```bash
+# Clone project (lần đầu)
 git clone https://github.com/lytrungnam/smarttraffic-ai.git
 cd smarttraffic-ai
-```
 
----
+# Tạo file .env (lần đầu) — xem mẫu ở phần Biến môi trường bên dưới
+cp .env.example .env   # hoặc tạo tay
 
-## 2️⃣ Chạy Docker
-
-```bash
+# Chạy toàn bộ stack
 docker compose up --build
 ```
 
----
+Chờ thấy dòng:
+```
+backend  | INFO:     Uvicorn running on http://0.0.0.0:8000
+```
+→ Mở trình duyệt tại **http://localhost:5173** ✅
 
-# 🌐 Truy cập hệ thống
-
-| Service      | URL                        |
-| ------------ | -------------------------- |
-| Frontend     | http://localhost:3000      |
-| Backend API  | http://localhost:8000      |
-| Swagger Docs | http://localhost:8000/docs |
-| Adminer      | http://localhost:8080      |
-| PostgreSQL   | localhost:5432             |
-
----
-
-# 🧪 API Detection
-
-## Upload Image Detection
-
-```http
-POST /api/v1/detection/image
+**Chế độ hot-reload** (tự reload khi sửa code):
+```bash
+docker compose watch
 ```
 
 ---
 
-# 📡 Realtime Detection
+## 🛠️ Chạy từng service trên localhost (Phát triển)
 
-Hệ thống hỗ trợ realtime detection sử dụng WebSocket.
+### Backend — dùng uv
 
-```text
-/ws/detection
+```bash
+# Cài uv nếu chưa có (Windows)
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+cd backend
+
+# Lần đầu: cài dependencies vào .venv
+uv sync
+
+# Chạy dev server
+uv run fastapi dev app/main.py
 ```
 
----
+Chờ thấy: `Uvicorn running on http://0.0.0.0:8000` ✅
 
-# 🗄️ Database
+> ⚠️ Trước khi chạy local, dừng service đó trong Docker:
+> ```bash
+> docker compose stop backend
+> ```
 
-Sử dụng PostgreSQL để lưu:
+### Frontend — dùng Bun
 
-* Biển số xe
-* Loại phương tiện
-* Độ chính xác AI
-* Ảnh detect
-* Thời gian nhận diện
-
----
-
-# 🐳 Docker Architecture
-
-```text
-Browser
-   ↓
-Frontend (React + Vite)
-   ↓
-FastAPI Backend
-   ↓
-PostgreSQL Database
-   ↓
-AI Detection Pipeline
+```bash
+# từ thư mục gốc hoặc frontend/
+bun run dev
+# hoặc: npm run dev
 ```
 
----
+Chờ thấy: `Local: http://localhost:5173` ✅
 
-# ☁️ Production Architecture (Future Deployment)
-
-```text
-Internet
-   ↓
-Domain
-   ↓
-VPS Public IP
-   ↓
-Traefik / Nginx
-   ↓
-Docker Containers
-   ↓
-Frontend + Backend + Database
-```
+> ⚠️ Tương tự, dừng frontend Docker trước nếu đang chạy:
+> ```bash
+> docker compose stop frontend
+> ```
 
 ---
 
-# 🔐 Environment Variables
+## 🌐 Địa chỉ các service
 
-Tạo file `.env`
+| Service | URL |
+|---------|-----|
+| 🖥️ Frontend (Dashboard) | http://localhost:5173 |
+| ⚙️ Backend API | http://localhost:8000 |
+| 📖 Swagger UI (API Docs) | http://localhost:8000/docs |
+| 🗄️ Adminer (Quản lý DB) | http://localhost:8080 |
+| 🔀 Traefik UI | http://localhost:8090 |
+| 📧 Mailcatcher | http://localhost:1080 |
+
+---
+
+## 🔑 Biến môi trường (.env)
+
+Tạo file `.env` ở **thư mục gốc project** (cùng cấp với `compose.yml`):
 
 ```env
+# =========================================================
+# DOMAIN & HOST
+# =========================================================
+DOMAIN=localhost
+FRONTEND_HOST=http://localhost:5173
+ENVIRONMENT=local                       # local | staging | production
+PROJECT_NAME="SmartTraffic AI"
+STACK_NAME=smarttraffic-ai
+
+# =========================================================
+# BACKEND
+# =========================================================
+BACKEND_CORS_ORIGINS=http://localhost,http://localhost:5173,http://127.0.0.1:5173
+SECRET_KEY=supersecretkey123
+FIRST_SUPERUSER=admin@alpr.com
+FIRST_SUPERUSER_PASSWORD=12345678
+
+# =========================================================
+# POSTGRESQL
+# =========================================================
+POSTGRES_SERVER=localhost
+POSTGRES_PORT=5432
+POSTGRES_DB=alpr_db
 POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_DB=smarttraffic
-SECRET_KEY=your-secret-key
+POSTGRES_PASSWORD=<mật_khẩu_postgres_của_bạn>
+
+# =========================================================
+# EMAIL (tuỳ chọn)
+# =========================================================
+SMTP_HOST=
+SMTP_USER=
+SMTP_PASSWORD=
+EMAILS_FROM_EMAIL=info@alpr.com
+SMTP_TLS=True
+SMTP_SSL=False
+SMTP_PORT=587
+
+# =========================================================
+# SENTRY (tuỳ chọn)
+# =========================================================
+SENTRY_DSN=
+
+# =========================================================
+# DOCKER IMAGES
+# =========================================================
+DOCKER_IMAGE_BACKEND=backend
+DOCKER_IMAGE_FRONTEND=frontend
+```
+
+> 🔐 **Bảo mật:** Không commit file `.env` lên Git — đã có trong `.gitignore`.
+
+---
+
+## 🏗️ Kiến trúc hệ thống
+
+### AI Detection Pipeline
+
+```
+video.mp4 (looped) → OpenCV frame → resize 960×540 → mỗi 3 frame:
+  → vehicle_detector.py  (YOLOv5, weights/vehicle_best.pt)
+  → plate_detector.py    (YOLOv5, weights/plate_best.pt)
+  → ocr_reader.py        (EasyOCR trên vùng crop biển số)
+  → vehicle_matcher.py   (ghép bbox biển số → loại xe)
+  → lưu biển số mới vào PostgreSQL + storage/detections/
+  → broadcast JSON đến tất cả WebSocket clients
+```
+
+Vòng lặp chính chạy như `asyncio` task khi backend khởi động (`detection_engine.py:real_ai_detection_loop`). Set `saved_plates` là in-memory dedup guard — reset khi restart.
+
+### Cấu trúc Backend
+
+- `app/main.py` — FastAPI entry: mount `/storage`, fire startup task, set CORS
+- `app/core/config.py` — Settings qua `pydantic-settings` từ `../.env`
+- `app/api/deps.py` — Shared dependencies: `SessionDep`, `CurrentUser`, `CurrentSuperUser`
+- `app/api/routes/` — Route modules: `login`, `users`, `detection`, `analytics`, `ws`, `wallet_auth`, `payment`
+- `app/services/websocket_service.py` — `ConnectionManager` singleton với broadcast + disconnect cleanup
+- `app/services/detection_engine.py` — Vòng lặp AI chính
+- `app/services/tracking_service.py` — Kalman filter + Hungarian matching tracker
+- `app/models/` — SQLModel table definitions (UUID PKs)
+- `app/ai/` — Bốn AI module load lúc import (YOLO models là singleton)
+
+### Cấu trúc Frontend
+
+- **TanStack Router** — file-based routing trong `src/routes/`. Routes dưới `_layout/` yêu cầu auth.
+- **TanStack Query** — quản lý server state. `src/client/` là typed API client tự động generate.
+- Auth: JWT token lưu trong `localStorage`, inject qua `OpenAPI.TOKEN` trong `main.tsx`. 401/403 → xoá token, redirect `/login`.
+- `src/components/` — tổ chức theo feature: `Dashboard/`, `Detection/`, `History/`, `Analytics/`, `Camera/`, `Admin/`, `Common/`, `ui/`.
+
+### Database
+
+PostgreSQL qua SQLModel + psycopg3. Alembic migrations trong `backend/app/alembic/versions/`. Backend gọi `SQLModel.metadata.create_all(engine)` lúc startup.
+
+Quan hệ chính: `Camera` → `Detection` (one-to-many, cascade delete trong migration `1a31ce608336`).
+
+---
+
+## 📁 Cấu trúc thư mục
+
+```
+smarttraffic-ai/
+├── .env                              # Biến môi trường (tạo tay, không commit)
+├── compose.yml                       # Docker Compose
+├── compose.override.yml              # Docker Compose (dev override)
+├── requirements.txt                  # Python dependencies (cài không dùng Docker)
+│
+├── backend/
+│   ├── app/
+│   │   ├── main.py                   # FastAPI entry point
+│   │   ├── ai/
+│   │   │   ├── vehicle_detector.py   # YOLOv5 phát hiện xe
+│   │   │   ├── plate_detector.py     # YOLOv5 phát hiện biển số
+│   │   │   ├── ocr_reader.py         # EasyOCR đọc chữ biển số
+│   │   │   ├── vehicle_matcher.py    # Ghép biển số với xe
+│   │   │   └── weights/              # Model weights (.pt files)
+│   │   ├── api/routes/               # API endpoints
+│   │   ├── core/                     # Config, DB, security
+│   │   ├── models/                   # SQLModel table definitions
+│   │   └── services/                 # Detection engine, WebSocket, tracker
+│   ├── pyproject.toml                # Python dependencies (quản lý bằng uv)
+│   └── storage/                      # Ảnh biển số đã lưu
+│
+└── frontend/
+    ├── src/
+    │   ├── routes/                   # File-based routing (TanStack Router)
+    │   ├── components/               # React components theo feature
+    │   └── client/                   # API client tự động generate (không sửa tay)
+    ├── package.json
+    └── vite.config.ts
 ```
 
 ---
 
-# 🚧 Tính năng hiện tại
+## 🧰 Tech Stack
 
-* ✅ Vehicle Detection
-* ✅ License Plate Detection
-* ✅ OCR Recognition
-* ✅ FastAPI REST API
-* ✅ Dockerized System
-* ✅ PostgreSQL Database
-* ✅ Realtime WebSocket
-* ✅ Frontend Dashboard
+### Backend
+| Công nghệ | Phiên bản | Mục đích |
+|-----------|-----------|----------|
+| Python | >= 3.10 | Ngôn ngữ chính |
+| FastAPI | 0.136 | Web framework |
+| uv | Mới nhất | Package manager |
+| SQLModel + psycopg3 | - | ORM + PostgreSQL |
+| Alembic | 1.18 | Database migrations |
+| PyJWT + pwdlib | - | Xác thực JWT |
+| web3 + eth-account | - | Blockchain / wallet auth |
+| Sentry SDK | 2.x | Giám sát lỗi production |
+
+### AI / Computer Vision
+| Công nghệ | Mục đích |
+|-----------|----------|
+| YOLOv5 (ultralytics) | Phát hiện xe và biển số |
+| EasyOCR | Đọc text từ biển số |
+| OpenCV | Xử lý frame video |
+| filterpy + scipy | Kalman filter tracking |
+
+### Frontend
+| Công nghệ | Phiên bản | Mục đích |
+|-----------|-----------|----------|
+| React | 19 | UI framework |
+| TypeScript | 5.9 | Type safety |
+| Vite | 7 | Build tool |
+| TailwindCSS | 4 | Styling |
+| TanStack Router | 1.x | File-based routing |
+| TanStack Query | 5.x | Server state management |
+| Recharts | 3.x | Biểu đồ thống kê |
+| shadcn + Radix UI | - | UI components |
+| Playwright | 1.x | E2E testing |
+
+### Hạ tầng
+| Công nghệ | Mục đích |
+|-----------|----------|
+| Docker + Compose | Containerization |
+| Traefik 3.x | Reverse proxy |
+| PostgreSQL 18 | Cơ sở dữ liệu |
 
 ---
 
-# 🔮 Hướng phát triển
+## 🔧 Lệnh phát triển
 
-* AI Tracking nhiều camera
-* Phân tích lưu lượng giao thông
-* Face Recognition
-* Vehicle Tracking
-* Cloud Deployment
-* Mobile App
-* AI Analytics Dashboard
+### Backend (chạy trong `backend/`)
+
+```bash
+# Dev server
+uv run fastapi dev app/main.py
+
+# Lint và type-check
+uv run ruff check app
+uv run ruff format app --check
+uv run mypy app
+uv run ty check app
+
+# Tự động format
+uv run ruff check app --fix
+uv run ruff format app
+
+# Tests
+uv run bash scripts/test.sh           # coverage + report
+uv run pytest tests/path/to/test.py   # single file
+```
+
+### Frontend (chạy trong `frontend/` hoặc project root)
+
+```bash
+bun run lint             # biome check --write --unsafe
+bun run build            # tsc + vite build
+bun run test             # Playwright e2e
+bun run test:ui          # Playwright UI mode
+bun run generate-client  # Tái tạo src/client/ từ openapi.json
+```
+
+### Regenerate API client
+
+Sau khi thay đổi backend routes:
+
+```bash
+bash scripts/generate-client.sh
+```
+
+`src/client/` được generate bởi `@hey-api/openapi-ts` từ `frontend/openapi.json` — **không sửa tay**.
+
+### Pre-commit / Linting
+
+[prek](https://prek.j178.dev/) được cấu hình trong `.pre-commit-config.yaml`:
+
+```bash
+# Cài một lần (từ backend/)
+uv run prek install -f
+
+# Chạy thủ công trên tất cả files
+uv run prek run --all-files
+```
+
+Hooks: ruff check + format, mypy, ty, biome, YAML/TOML validation, auto-SDK regeneration.
 
 ---
 
-# 👨‍💻 Thành viên thực hiện
+## ❗ Lỗi thường gặp
 
-* Nguyễn Tấn Mỹ
-* Lý Trung Nam
+| Lỗi | Nguyên nhân | Cách fix |
+|-----|-------------|----------|
+| `Cannot find dockerDesktopLinuxEngine` | Docker Desktop chưa bật | Mở Docker Desktop, chờ icon xanh |
+| `Port 8000 already in use` | Backend đang chạy | `docker compose down` rồi `up` lại |
+| `'uv' is not recognized` | uv chưa cài | Chạy lệnh cài uv ở mục Backend bên trên |
+| `'fastapi' is not recognized` | Chạy thiếu `uv run` | Dùng `uv run fastapi dev app/main.py` |
+| `No module named 'cv2'` | Thiếu OpenCV | `uv pip install opencv-python-headless` |
+| `POSTGRES_PASSWORD not set` | Thiếu file .env | Tạo file `.env` theo mẫu trên |
+| `connection refused` khi kết nối DB | PostgreSQL chưa chạy | `docker compose up db` trước |
+| Frontend trắng / không load API | CORS sai URL | Kiểm tra `BACKEND_CORS_ORIGINS` trong `.env` |
 
 ---
 
-# 📜 License
+## 📱 Demo trên điện thoại Android
 
-MIT License
+1. Laptop và điện thoại **cùng mạng WiFi**
+2. Tìm IP laptop: `ipconfig` (Windows) → dòng `IPv4 Address`
+3. Mở Chrome Android, nhập `http://<IP_laptop>:5173`
+4. Cho phép truy cập camera → Stream bắt đầu ✅
 
 ---
 
-# ⭐ SmartTraffic AI
+## 🛑 Tắt dự án
 
-AI-powered Real-time Traffic Monitoring and License Plate Recognition System.
+```bash
+docker compose down        # dừng tất cả container
+# Nếu đang chạy local: Ctrl + C
+```
+
+---
+
+## 👥 Thông tin dự án
+
+- **GitHub:** https://github.com/lytrungnam/smarttraffic-ai
+- **Thành viên:** Nguyễn Tấn Mỹ, Lý Trung Nam
+- **Tài khoản admin mặc định:** `admin@alpr.com` / `12345678`

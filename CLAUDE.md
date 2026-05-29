@@ -20,7 +20,8 @@ docker compose logs backend # service-specific logs
 
 ```bash
 cd backend
-fastapi dev app/main.py
+uv sync              # install dependencies into .venv (first time)
+uv run fastapi dev app/main.py
 ```
 
 ### Running frontend locally (without Docker)
