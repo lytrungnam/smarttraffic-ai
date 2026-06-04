@@ -2,6 +2,7 @@ import asyncio
 import time
 from pathlib import Path
 
+import cv2
 from fastapi import APIRouter, File, HTTPException, Query, UploadFile
 from fastapi.responses import StreamingResponse
 
@@ -16,6 +17,95 @@ router = APIRouter(
     prefix="/detections",
     tags=["detections"],
 )
+
+IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png"}
+IMAGE_CONTENT_TYPES = {"image/jpeg", "image/png"}
+VIDEO_EXTENSIONS = {".mp4", ".avi", ".mov"}
+VIDEO_CONTENT_TYPES = {
+    "video/mp4",
+    "video/avi",
+    "video/quicktime",
+    "video/x-msvideo",
+}
+MAX_VIDEO_UPLOAD_BYTES = 25 * 1024 * 1024
+VIDEO_SAMPLE_EVERY_N_FRAMES = 10
+VIDEO_MAX_SAMPLED_FRAMES = 30
+VIDEO_MAX_SAVED_DETECTIONS = 10
+
+
+def _safe_file_stem(filename: str | None) -> str:
+    stem = Path(filename or "upload").stem
+    safe_stem = "".join(char if char.isalnum() else "_" for char in stem)
+    return safe_stem or "upload"
+
+
+def _get_upload_kind(file: UploadFile) -> str:
+    extension = Path(file.filename or "").suffix.lower()
+    content_type = (file.content_type or "").lower()
+
+    if extension in IMAGE_EXTENSIONS or content_type in IMAGE_CONTENT_TYPES:
+        return "image"
+
+    if extension in VIDEO_EXTENSIONS or content_type in VIDEO_CONTENT_TYPES:
+        return "video"
+
+    raise HTTPException(
+        status_code=400,
+        detail="Unsupported file type. Supported formats: JPG, PNG, MP4, AVI, MOV.",
+    )
+
+
+async def _save_detection_results(
+    *,
+    db: SessionDep,
+    results: list[dict],
+    evidence_bytes: bytes,
+    evidence_label: str,
+    max_remaining: int | None = None,
+) -> list[dict]:
+    saved = []
+    storage_dir = Path("storage/detections")
+    storage_dir.mkdir(parents=True, exist_ok=True)
+
+    for index, result in enumerate(results):
+        if max_remaining is not None and len(saved) >= max_remaining:
+            break
+
+        plate_text = result.get("plate_number", "UNKNOWN")
+
+        if not plate_text or plate_text == "UNKNOWN":
+            continue
+
+        timestamp = int(time.time())
+        safe_plate_text = "".join(
+            char if char.isalnum() else "_"
+            for char in plate_text
+        )
+        image_path = (
+            storage_dir
+            / f"{safe_plate_text}_{timestamp}_{evidence_label}_{index}.jpg"
+        )
+
+        with open(image_path, "wb") as f:
+            f.write(evidence_bytes)
+
+        detection = Detection(
+            plate_number=plate_text,
+            vehicle_type=result.get("vehicle_type", "unclassified"),
+            confidence=float(result.get("confidence", 0)),
+            image_path=str(image_path),
+            status="detected",
+        )
+
+        db.add(detection)
+        db.commit()
+        db.refresh(detection)
+
+        payload = serialize_detection(detection)
+        await manager.broadcast(payload)
+        saved.append(payload)
+
+    return saved
 
 
 # =====================================
@@ -34,7 +124,7 @@ async def get_detection_history(
 
 
 # =====================================
-# UPLOAD IMAGE → AI DETECTION
+# UPLOAD IMAGE/VIDEO → AI DETECTION
 # =====================================
 
 @router.post("/upload")
@@ -42,7 +132,22 @@ async def upload_detection(
     db: SessionDep,
     file: UploadFile = File(...),
 ):
+    upload_kind = _get_upload_kind(file)
     contents = await file.read()
+
+    if upload_kind == "video" and len(contents) > MAX_VIDEO_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail="Video upload is limited to 25MB for the production demo.",
+        )
+
+    if upload_kind == "video":
+        return await _process_video_upload(db, file, contents)
+
+    return await _process_image_upload(db, contents)
+
+
+async def _process_image_upload(db: SessionDep, contents: bytes):
     try:
         inference = await process_detection(contents)
     except FileNotFoundError as exc:
@@ -51,42 +156,14 @@ async def upload_detection(
     results = inference["results"]
     debug = inference["debug"]
 
-    saved = []
+    debug["input_type"] = "image"
 
-    storage_dir = Path("storage/detections")
-    storage_dir.mkdir(parents=True, exist_ok=True)
-
-    for index, result in enumerate(results):
-        plate_text = result.get("plate_number", "UNKNOWN")
-
-        if not plate_text or plate_text == "UNKNOWN":
-            continue
-
-        timestamp = int(time.time())
-        safe_plate_text = "".join(
-            char if char.isalnum() else "_"
-            for char in plate_text
-        )
-        image_path = storage_dir / f"{safe_plate_text}_{timestamp}_{index}_upload.jpg"
-
-        with open(image_path, "wb") as f:
-            f.write(contents)
-
-        detection = Detection(
-            plate_number=plate_text,
-            vehicle_type=result.get("vehicle_type", "unclassified"),
-            confidence=float(result.get("confidence", 0)),
-            image_path=str(image_path),
-            status="detected",
-        )
-
-        db.add(detection)
-        db.commit()
-        db.refresh(detection)
-
-        payload = serialize_detection(detection)
-        await manager.broadcast(payload)
-        saved.append(payload)
+    saved = await _save_detection_results(
+        db=db,
+        results=results,
+        evidence_bytes=contents,
+        evidence_label="upload",
+    )
 
     debug["final_count"] = len(saved)
 
@@ -95,6 +172,116 @@ async def upload_detection(
         "total": len(saved),
         "debug": debug,
     }
+
+
+async def _process_video_upload(
+    db: SessionDep,
+    file: UploadFile,
+    contents: bytes,
+):
+    upload_dir = Path("storage/uploads")
+    upload_dir.mkdir(parents=True, exist_ok=True)
+
+    extension = Path(file.filename or "").suffix.lower() or ".mp4"
+    video_path = (
+        upload_dir
+        / f"{_safe_file_stem(file.filename)}_{int(time.time())}{extension}"
+    )
+    with open(video_path, "wb") as f:
+        f.write(contents)
+
+    capture = cv2.VideoCapture(str(video_path))
+    video_opened = capture.isOpened()
+    total_frames = int(capture.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
+
+    if not video_opened:
+        capture.release()
+        raise HTTPException(
+            status_code=400,
+            detail="Video could not be opened by OpenCV.",
+        )
+
+    saved = []
+    frame_index = 0
+    sampled_frames = 0
+    processed_frames = 0
+    vehicle_count = 0
+    plate_count = 0
+    ocr_count = 0
+
+    try:
+        while sampled_frames < VIDEO_MAX_SAMPLED_FRAMES:
+            success, frame = capture.read()
+            if not success:
+                break
+
+            if frame_index % VIDEO_SAMPLE_EVERY_N_FRAMES != 0:
+                frame_index += 1
+                continue
+
+            sampled_frames += 1
+            processed_frames += 1
+
+            encode_success, buffer = cv2.imencode(".jpg", frame)
+            if not encode_success:
+                frame_index += 1
+                continue
+
+            frame_bytes = buffer.tobytes()
+            inference = await process_detection(frame_bytes)
+            debug = inference["debug"]
+            vehicle_count += int(debug.get("vehicle_count", 0))
+            plate_count += int(debug.get("plate_count", 0))
+            ocr_count += int(debug.get("ocr_count", 0))
+
+            remaining = VIDEO_MAX_SAVED_DETECTIONS - len(saved)
+            if remaining <= 0:
+                break
+
+            saved.extend(
+                await _save_detection_results(
+                    db=db,
+                    results=inference["results"],
+                    evidence_bytes=frame_bytes,
+                    evidence_label=f"video_frame_{frame_index}",
+                    max_remaining=remaining,
+                )
+            )
+
+            if len(saved) >= VIDEO_MAX_SAVED_DETECTIONS:
+                break
+
+            frame_index += 1
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    finally:
+        capture.release()
+
+    video_debug = {
+        "input_type": "video",
+        "video_opened": video_opened,
+        "total_frames": total_frames,
+        "sampled_frames": sampled_frames,
+        "processed_frames": processed_frames,
+        "vehicle_count": vehicle_count,
+        "plate_count": plate_count,
+        "ocr_count": ocr_count,
+        "final_count": len(saved),
+    }
+
+    response = {
+        "results": saved,
+        "total": len(saved),
+        "debug": video_debug,
+    }
+
+    if not saved:
+        response["message"] = (
+            "No license plate was detected in sampled video frames. "
+            "Try a clearer video or shorter clip."
+        )
+
+    return response
 
 
 # =====================================

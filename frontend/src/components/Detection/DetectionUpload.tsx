@@ -33,8 +33,13 @@ type UploadResult = {
 }
 
 type UploadDebug = {
+  input_type?: "image" | "video"
   image_read: boolean
   image_shape: number[] | null
+  video_opened?: boolean
+  total_frames?: number
+  sampled_frames?: number
+  processed_frames?: number
   vehicle_count: number
   plate_count: number
   ocr_count: number
@@ -56,6 +61,7 @@ export default function DetectionUpload() {
   const [results, setResults] = useState<UploadResult[]>([])
   const [debug, setDebug] = useState<UploadDebug | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,6 +71,7 @@ export default function DetectionUpload() {
     setResults([])
     setDebug(null)
     setError(null)
+    setNotice(null)
   }
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -75,6 +82,7 @@ export default function DetectionUpload() {
     setResults([])
     setDebug(null)
     setError(null)
+    setNotice(null)
   }
 
   const handleRemove = () => {
@@ -82,6 +90,7 @@ export default function DetectionUpload() {
     setResults([])
     setDebug(null)
     setError(null)
+    setNotice(null)
     if (inputRef.current) inputRef.current.value = ""
   }
 
@@ -90,6 +99,7 @@ export default function DetectionUpload() {
 
     setIsUploading(true)
     setError(null)
+    setNotice(null)
     setResults([])
     setDebug(null)
 
@@ -100,6 +110,7 @@ export default function DetectionUpload() {
       const response = await axios.post<{
         results: UploadResult[]
         debug?: UploadDebug
+        message?: string
       }>(
         `${API_URL}/detections/upload`,
         formData,
@@ -113,8 +124,16 @@ export default function DetectionUpload() {
       )
       setResults(response.data.results)
       setDebug(response.data.debug ?? null)
-    } catch {
-      setError("Upload failed. Make sure the backend is running and the file is a valid image.")
+      setNotice(response.data.message ?? null)
+    } catch (uploadError) {
+      const detail = axios.isAxiosError(uploadError)
+        ? uploadError.response?.data?.detail
+        : null
+      setError(
+        typeof detail === "string"
+          ? detail
+          : "Upload failed. Make sure the backend is running and the file is a valid image or video.",
+      )
     } finally {
       setIsUploading(false)
     }
@@ -209,6 +228,11 @@ export default function DetectionUpload() {
                     <p className="mt-2 text-xs font-semibold text-zinc-400">
                       {fileSizeMB} MB • {isImage ? "Image File" : "Video File"}
                     </p>
+                    {isVideo && (
+                      <p className="mt-2 text-xs font-semibold text-purple-300">
+                        Video analysis samples selected frames for demo performance.
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -250,8 +274,14 @@ export default function DetectionUpload() {
           </div>
         )}
 
+        {notice && (
+          <div className="mt-4 rounded-2xl border border-yellow-500/20 bg-yellow-500/10 p-4 text-sm font-semibold text-yellow-300">
+            {notice}
+          </div>
+        )}
+
         {/* RESULTS */}
-        {debug && results.length === 0 && !isUploading && (
+        {debug && results.length === 0 && !isUploading && !error && !notice && (
           <div className="mt-5 rounded-2xl border border-yellow-500/20 bg-yellow-500/10 p-4 text-sm font-semibold text-yellow-300">
             No license plate was detected. Try a clearer image that includes the full vehicle.
           </div>
