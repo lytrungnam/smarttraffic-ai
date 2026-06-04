@@ -134,7 +134,7 @@ function SubscriptionPage() {
       await queryClient.invalidateQueries({ queryKey: ["subscription"] })
       toast.success(
         data.message ??
-          "Thanh toán demo thành công. Gói dịch vụ đã được kích hoạt.",
+          "Demo payment completed. The subscription plan has been activated.",
       )
       setSelectedPlan(null)
       navigate({ to: "/dashboard" })
@@ -146,7 +146,7 @@ function SubscriptionPage() {
 
   const handlePlanAction = (plan: Plan) => {
     if (plan.key === "enterprise") {
-      toast.info("Vui lòng liên hệ đội ngũ SmartTraffic AI để kích hoạt gói Enterprise.")
+      toast.info("Please contact the SmartTraffic AI team to activate Enterprise.")
       return
     }
 
@@ -262,7 +262,7 @@ function SubscriptionPage() {
                   ) : plan.paid ? (
                     <>
                       <CreditCard className="h-4 w-4" />
-                      Thanh toán bằng MoMo
+                      Pay with MoMo
                     </>
                   ) : plan.key === "enterprise" ? (
                     <>
@@ -304,16 +304,16 @@ function SubscriptionPage() {
       <Dialog open={selectedPlan !== null} onOpenChange={() => setSelectedPlan(null)}>
         <DialogContent className="border-white/10 bg-zinc-950 text-white">
           <DialogHeader>
-            <DialogTitle>Thanh toán bằng MoMo</DialogTitle>
+            <DialogTitle>Pay with MoMo</DialogTitle>
             <DialogDescription>
-              Xác nhận thanh toán demo để kích hoạt gói dịch vụ.
+              Confirm demo payment to activate your subscription plan.
             </DialogDescription>
           </DialogHeader>
 
           {selectedPlan && (
             <div className="space-y-5">
               <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4">
-                <p className="text-sm text-zinc-400">Gói dịch vụ</p>
+                <p className="text-sm text-zinc-400">Plan</p>
                 <p className="mt-1 text-xl font-semibold text-white">
                   {selectedPlan.name}
                 </p>
@@ -334,11 +334,13 @@ function SubscriptionPage() {
               </div>
 
               <div className="rounded-lg border border-pink-400/20 bg-pink-500/10 p-4 text-sm leading-6 text-zinc-200">
-                <p className="font-semibold text-pink-200">Hướng dẫn thanh toán</p>
+                <p className="font-semibold text-pink-200">
+                  Payment Instructions
+                </p>
                 <p className="mt-2">
-                  Mở ứng dụng MoMo, chọn quét mã QR demo, kiểm tra tên gói và số
-                  tiền. Sau khi hoàn tất trong môi trường demo, bấm "Tôi đã
-                  thanh toán" để kích hoạt gói.
+                  Open the MoMo app, scan the demo QR code, verify the selected
+                  plan and amount, then click 'I Have Completed Payment' to
+                  activate the plan in demo mode.
                 </p>
               </div>
             </div>
@@ -351,7 +353,7 @@ function SubscriptionPage() {
               onClick={() => setSelectedPlan(null)}
             >
               <X className="h-4 w-4" />
-              Hủy
+              Cancel
             </Button>
             <Button
               type="button"
@@ -360,7 +362,7 @@ function SubscriptionPage() {
               className="bg-pink-500 text-white hover:bg-pink-400"
             >
               <BadgeCheck className="h-4 w-4" />
-              {activation.isPending ? "Đang kích hoạt..." : "Tôi đã thanh toán"}
+              {activation.isPending ? "Activating..." : "I Have Completed Payment"}
             </Button>
           </DialogFooter>
         </DialogContent>
