@@ -1,6 +1,5 @@
 import { createFileRoute, useSearch } from "@tanstack/react-router"
 import { z } from "zod"
-import { useWalletAuth } from "@/hooks/useWalletAuth"
 import MobileCameraStream from "@/components/Mobile/MobileCameraStream"
 
 const searchSchema = z.object({
@@ -22,13 +21,11 @@ export const Route = createFileRoute("/mobile-camera")({
 })
 
 function MobileCameraPage() {
-  const { isConnected, getToken, connect, isLoading } = useWalletAuth()
   const { demo } = useSearch({ from: "/mobile-camera" })
-  const eth = (window as unknown as Record<string, unknown>).ethereum
+  const token = localStorage.getItem("access_token") ?? ""
 
-  // Demo mode hoặc đã xác thực → vào thẳng stream
-  if (isConnected || demo === "1") {
-    return <MobileCameraStream token={getToken()} cameraId={99} />
+  if (token || demo === "1") {
+    return <MobileCameraStream token={token} cameraId={99} />
   }
 
   return (
@@ -44,30 +41,12 @@ function MobileCameraPage() {
         </div>
 
         <div className="space-y-3">
-          {/* MetaMask */}
-          {eth ? (
-            <button
-              type="button"
-              onClick={connect}
-              disabled={isLoading}
-              className="flex w-full items-center justify-center gap-3 rounded-2xl bg-orange-500 py-4 text-base font-semibold text-white transition hover:bg-orange-400 disabled:opacity-60"
-            >
-              {isLoading ? (
-                <span className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-              ) : (
-                <span className="text-2xl">🦊</span>
-              )}
-              {isLoading ? "Đang xác thực..." : "Đăng nhập MetaMask"}
-            </button>
-          ) : (
-            <a
-              href="https://metamask.app.link/dapp/smarttraffic.local"
-              className="flex w-full items-center justify-center gap-3 rounded-2xl border border-orange-500/30 bg-orange-500/10 py-4 text-base font-semibold text-orange-400"
-            >
-              <span className="text-2xl">🦊</span>
-              Mở MetaMask Mobile
-            </a>
-          )}
+          <a
+            href="/login"
+            className="flex w-full items-center justify-center gap-3 rounded-2xl bg-cyan-500 py-4 text-base font-semibold text-black transition hover:bg-cyan-400"
+          >
+            Đăng nhập tài khoản
+          </a>
 
           {/* Demo mode */}
           <a

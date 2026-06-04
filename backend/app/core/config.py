@@ -105,13 +105,7 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER: EmailStr
     FIRST_SUPERUSER_PASSWORD: str
 
-    # Wallet / MetaMask auth
-    WALLET_JWT_SECRET: str = "wallet-secret-change-in-production"
-    PAYMENT_WALLET: str = "0x0000000000000000000000000000000000000000"
-    POLYGON_RPC_URL: str = "https://polygon-rpc.com"
-    PRICE_3_CAMERAS_MATIC: float = 2.0
-    PRICE_5_CAMERAS_MATIC: float = 4.0
-    ACCEPTED_CHAIN_ID: int = 137
+    # Subscription limits
     FREE_DAILY_LIMIT_MINUTES: int = 120
     ENABLE_AI_STARTUP: bool = False
     CAMERA_SOURCE: str | None = None

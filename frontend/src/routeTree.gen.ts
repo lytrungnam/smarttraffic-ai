@@ -9,7 +9,6 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as WalletLoginRouteImport } from './routes/wallet-login'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RecoverPasswordRouteImport } from './routes/recover-password'
@@ -17,6 +16,7 @@ import { Route as MobileCameraRouteImport } from './routes/mobile-camera'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LayoutRouteImport } from './routes/_layout'
 import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
+import { Route as LayoutSubscriptionRouteImport } from './routes/_layout/subscription'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutHistoryRouteImport } from './routes/_layout/history'
 import { Route as LayoutDetectionRouteImport } from './routes/_layout/detection'
@@ -25,11 +25,6 @@ import { Route as LayoutCameraRouteImport } from './routes/_layout/camera'
 import { Route as LayoutAnalyticsRouteImport } from './routes/_layout/analytics'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
 
-const WalletLoginRoute = WalletLoginRouteImport.update({
-  id: '/wallet-login',
-  path: '/wallet-login',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
@@ -62,6 +57,11 @@ const LayoutRoute = LayoutRouteImport.update({
 const LayoutIndexRoute = LayoutIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutSubscriptionRoute = LayoutSubscriptionRouteImport.update({
+  id: '/subscription',
+  path: '/subscription',
   getParentRoute: () => LayoutRoute,
 } as any)
 const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
@@ -107,7 +107,6 @@ export interface FileRoutesByFullPath {
   '/recover-password': typeof RecoverPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
-  '/wallet-login': typeof WalletLoginRoute
   '/admin': typeof LayoutAdminRoute
   '/analytics': typeof LayoutAnalyticsRoute
   '/camera': typeof LayoutCameraRoute
@@ -115,6 +114,7 @@ export interface FileRoutesByFullPath {
   '/detection': typeof LayoutDetectionRoute
   '/history': typeof LayoutHistoryRoute
   '/settings': typeof LayoutSettingsRoute
+  '/subscription': typeof LayoutSubscriptionRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -122,7 +122,6 @@ export interface FileRoutesByTo {
   '/recover-password': typeof RecoverPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
-  '/wallet-login': typeof WalletLoginRoute
   '/admin': typeof LayoutAdminRoute
   '/analytics': typeof LayoutAnalyticsRoute
   '/camera': typeof LayoutCameraRoute
@@ -130,6 +129,7 @@ export interface FileRoutesByTo {
   '/detection': typeof LayoutDetectionRoute
   '/history': typeof LayoutHistoryRoute
   '/settings': typeof LayoutSettingsRoute
+  '/subscription': typeof LayoutSubscriptionRoute
   '/': typeof LayoutIndexRoute
 }
 export interface FileRoutesById {
@@ -140,7 +140,6 @@ export interface FileRoutesById {
   '/recover-password': typeof RecoverPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
-  '/wallet-login': typeof WalletLoginRoute
   '/_layout/admin': typeof LayoutAdminRoute
   '/_layout/analytics': typeof LayoutAnalyticsRoute
   '/_layout/camera': typeof LayoutCameraRoute
@@ -148,6 +147,7 @@ export interface FileRoutesById {
   '/_layout/detection': typeof LayoutDetectionRoute
   '/_layout/history': typeof LayoutHistoryRoute
   '/_layout/settings': typeof LayoutSettingsRoute
+  '/_layout/subscription': typeof LayoutSubscriptionRoute
   '/_layout/': typeof LayoutIndexRoute
 }
 export interface FileRouteTypes {
@@ -159,7 +159,6 @@ export interface FileRouteTypes {
     | '/recover-password'
     | '/reset-password'
     | '/signup'
-    | '/wallet-login'
     | '/admin'
     | '/analytics'
     | '/camera'
@@ -167,6 +166,7 @@ export interface FileRouteTypes {
     | '/detection'
     | '/history'
     | '/settings'
+    | '/subscription'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -174,7 +174,6 @@ export interface FileRouteTypes {
     | '/recover-password'
     | '/reset-password'
     | '/signup'
-    | '/wallet-login'
     | '/admin'
     | '/analytics'
     | '/camera'
@@ -182,6 +181,7 @@ export interface FileRouteTypes {
     | '/detection'
     | '/history'
     | '/settings'
+    | '/subscription'
     | '/'
   id:
     | '__root__'
@@ -191,7 +191,6 @@ export interface FileRouteTypes {
     | '/recover-password'
     | '/reset-password'
     | '/signup'
-    | '/wallet-login'
     | '/_layout/admin'
     | '/_layout/analytics'
     | '/_layout/camera'
@@ -199,6 +198,7 @@ export interface FileRouteTypes {
     | '/_layout/detection'
     | '/_layout/history'
     | '/_layout/settings'
+    | '/_layout/subscription'
     | '/_layout/'
   fileRoutesById: FileRoutesById
 }
@@ -209,18 +209,10 @@ export interface RootRouteChildren {
   RecoverPasswordRoute: typeof RecoverPasswordRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
-  WalletLoginRoute: typeof WalletLoginRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/wallet-login': {
-      id: '/wallet-login'
-      path: '/wallet-login'
-      fullPath: '/wallet-login'
-      preLoaderRoute: typeof WalletLoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/signup': {
       id: '/signup'
       path: '/signup'
@@ -268,6 +260,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof LayoutIndexRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/subscription': {
+      id: '/_layout/subscription'
+      path: '/subscription'
+      fullPath: '/subscription'
+      preLoaderRoute: typeof LayoutSubscriptionRouteImport
       parentRoute: typeof LayoutRoute
     }
     '/_layout/settings': {
@@ -330,6 +329,7 @@ interface LayoutRouteChildren {
   LayoutDetectionRoute: typeof LayoutDetectionRoute
   LayoutHistoryRoute: typeof LayoutHistoryRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
+  LayoutSubscriptionRoute: typeof LayoutSubscriptionRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
 }
 
@@ -341,6 +341,7 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutDetectionRoute: LayoutDetectionRoute,
   LayoutHistoryRoute: LayoutHistoryRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,
+  LayoutSubscriptionRoute: LayoutSubscriptionRoute,
   LayoutIndexRoute: LayoutIndexRoute,
 }
 
@@ -354,7 +355,6 @@ const rootRouteChildren: RootRouteChildren = {
   RecoverPasswordRoute: RecoverPasswordRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
-  WalletLoginRoute: WalletLoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

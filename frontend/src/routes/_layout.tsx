@@ -2,8 +2,7 @@ import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
 
 import { Footer } from "@/components/Common/Footer"
 import AppSidebar from "@/components/Sidebar/AppSidebar"
-import WalletButton from "@/components/Wallet/WalletButton"
-import UsageBanner from "@/components/Wallet/UsageBanner"
+import SubscriptionStatus from "@/components/Subscription/SubscriptionStatus"
 import {
   SidebarInset,
   SidebarProvider,
@@ -29,9 +28,8 @@ function Layout() {
       <SidebarInset>
         <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center justify-between gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1 text-muted-foreground" />
-          <WalletButton />
+          <SubscriptionStatus />
         </header>
-        <UsageBanner />
         <main className="flex-1 p-6 md:p-8">
           <div className="mx-auto max-w-7xl">
             <Outlet />

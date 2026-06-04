@@ -4,7 +4,6 @@ import { useState } from "react"
 import { Radio, Smartphone } from "lucide-react"
 import CameraCard from "./CameraCard"
 import CameraModal from "./CameraModal"
-import { useWalletAuth } from "@/hooks/useWalletAuth"
 
 const CAMERAS = [
   {
@@ -28,8 +27,7 @@ const CAMERAS = [
 ]
 
 export default function CameraGrid() {
-  const { getToken } = useWalletAuth()
-  const token = getToken() ?? ""
+  const token = localStorage.getItem("access_token") ?? ""
 
   const [selectedCameraId, setSelectedCameraId] = useState<number | null>(null)
   const selectedCamera = CAMERAS.find((c) => c.id === selectedCameraId) ?? null

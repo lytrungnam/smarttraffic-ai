@@ -19,6 +19,16 @@ Hệ thống nhận diện phương tiện và biển số xe thời gian thực
 
 ---
 
+## 🌐 Online Deployment
+
+| Service | URL |
+|---------|-----|
+| Frontend | https://smarttraffic-ai-frontend.vercel.app |
+| Backend API Docs | https://smarttraffic-ai-production.up.railway.app/docs |
+| Healthcheck | https://smarttraffic-ai-production.up.railway.app/railway-health |
+
+---
+
 ## 🚀 Chạy bằng Docker (Khuyên dùng)
 
 ```bash
@@ -91,7 +101,7 @@ Chờ thấy: `Local: http://localhost:5173` ✅
 
 ---
 
-## 🌐 Địa chỉ các service
+## 🌐 Địa chỉ local development
 
 | Service | URL |
 |---------|-----|
@@ -168,6 +178,28 @@ CAMERA_SOURCE=                          # 0, RTSP/HTTP camera URL, hoặc path v
 
 ---
 
+## 💳 Subscription & MoMo Demo Payment
+
+SmartTraffic AI dùng mô hình SaaS subscription qua tài khoản đăng nhập JWT thông thường. Không cần ví, khóa thanh toán, hoặc credential MoMo thật.
+
+Các gói hiện có:
+
+| Gói | Giá | Giới hạn chính |
+|-----|-----|----------------|
+| Free Trial | 0 VND | 7 ngày, 1 camera, 100 detections/day, basic history |
+| Basic | 99,000 VND/month | 1 camera, 1,000 detections/day, history, basic analytics |
+| Pro | 299,000 VND/month | 5 cameras, 10,000 detections/day, advanced analytics, export reports |
+| Enterprise | Contact sales | Unlimited cameras, realtime alerts, custom retention, multi-user management |
+
+Frontend có trang `/subscription`. Basic và Pro mở modal "Thanh toán bằng MoMo" với QR placeholder demo; khi người dùng bấm "Tôi đã thanh toán", frontend gọi `POST /api/v1/subscriptions/activate-demo` để kích hoạt gói trong database.
+
+Backend subscription endpoints:
+
+- `GET /api/v1/subscriptions/me`
+- `POST /api/v1/subscriptions/activate-demo`
+
+---
+
 ## 🏗️ Kiến trúc hệ thống
 
 ### AI Detection Pipeline
@@ -212,7 +244,7 @@ CAMERA_SOURCE=0
 - `app/main.py` — FastAPI entry: mount `/storage`, fire startup task, set CORS
 - `app/core/config.py` — Settings qua `pydantic-settings` từ `../.env`
 - `app/api/deps.py` — Shared dependencies: `SessionDep`, `CurrentUser`, `CurrentSuperUser`
-- `app/api/routes/` — Route modules: `login`, `users`, `detection`, `analytics`, `ws`, `wallet_auth`, `payment`
+- `app/api/routes/` — Route modules: `login`, `users`, `detection`, `analytics`, `ws`, `subscriptions`
 - `app/services/websocket_service.py` — `ConnectionManager` singleton với broadcast + disconnect cleanup
 - `app/services/detection_engine.py` — Vòng lặp AI chính
 - `app/services/tracking_service.py` — Kalman filter + Hungarian matching tracker
@@ -281,7 +313,6 @@ smarttraffic-ai/
 | SQLModel + psycopg3 | - | ORM + PostgreSQL |
 | Alembic | 1.18 | Database migrations |
 | PyJWT + pwdlib | - | Xác thực JWT |
-| web3 + eth-account | - | Blockchain / wallet auth |
 | Sentry SDK | 2.x | Giám sát lỗi production |
 
 ### AI / Computer Vision
@@ -385,15 +416,6 @@ Hooks: ruff check + format, mypy, ty, biome, YAML/TOML validation, auto-SDK rege
 | `POSTGRES_PASSWORD not set` | Thiếu file .env | Tạo file `.env` theo mẫu trên |
 | `connection refused` khi kết nối DB | PostgreSQL chưa chạy | `docker compose up db` trước |
 | Frontend trắng / không load API | CORS sai URL | Kiểm tra `BACKEND_CORS_ORIGINS` trong `.env` |
-
----
-
-## 📱 Demo trên điện thoại Android
-
-1. Laptop và điện thoại **cùng mạng WiFi**
-2. Tìm IP laptop: `ipconfig` (Windows) → dòng `IPv4 Address`
-3. Mở Chrome Android, nhập `http://<IP_laptop>:5173`
-4. Cho phép truy cập camera → Stream bắt đầu ✅
 
 ---
 

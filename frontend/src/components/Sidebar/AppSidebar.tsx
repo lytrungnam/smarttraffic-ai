@@ -1,6 +1,7 @@
 import {
   BarChart3,
   Camera,
+  CreditCard,
   History,
   Home,
   LogOut,
@@ -54,6 +55,12 @@ const navItems: Item[] = [
     icon: Camera,
     title: "Camera",
     path: "/camera",
+  },
+
+  {
+    icon: CreditCard,
+    title: "Subscription",
+    path: "/subscription",
   },
 ]
 
