@@ -2,12 +2,10 @@ import { createFileRoute } from "@tanstack/react-router"
 
 import { Database, FileSearch } from "lucide-react"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 
 import DashboardSection from "@/components/Dashboard/DashboardSection"
 
-import HistoryCard from "@/components/History/HistoryCard"
-import HistoryHero from "@/components/History/HistoryHero"
 import HistoryPagination from "@/components/History/HistoryPagination"
 import HistorySearch from "@/components/History/HistorySearch"
 import HistoryTable from "@/components/History/HistoryTable"
@@ -145,8 +143,6 @@ function HistoryPage() {
     }
   }, [extractRealtimeDetections, limit, matchesActiveFilters])
 
-  const recentRecords = useMemo(() => records.slice(0, 3), [records])
-
   const handleSearchChange = (value: string) => {
     setSearch(value)
     setPage(1)
@@ -174,9 +170,6 @@ function HistoryPage() {
         text-white
       "
     >
-      {/* HERO */}
-      <HistoryHero />
-
       {/* MAIN */}
       <main
         className="
@@ -185,9 +178,6 @@ function HistoryPage() {
           lg:px-10
         "
       >
-        {/* CARDS */}
-        <HistoryCard records={recentRecords} isLoading={isLoading} />
-
         {/* SEARCH */}
         <DashboardSection
           title="Search Detection Records"
@@ -200,7 +190,6 @@ function HistoryPage() {
           <HistorySearch
             search={search}
             vehicleType={vehicleType}
-            total={total}
             isLoading={isLoading}
             onSearchChange={handleSearchChange}
             onVehicleTypeChange={handleVehicleTypeChange}

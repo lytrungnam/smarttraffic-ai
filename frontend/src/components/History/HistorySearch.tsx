@@ -1,6 +1,6 @@
 // components/History/HistorySearch.jsx
 
-import { Car, Clock3, ScanSearch, Search, ShieldAlert, X } from "lucide-react"
+import { Car, ScanSearch, Search, X } from "lucide-react"
 
 import {
   TRAFFIC_VEHICLE_CLASSES,
@@ -10,7 +10,6 @@ import {
 type HistorySearchProps = {
   search: string
   vehicleType: string
-  total: number
   isLoading: boolean
   onSearchChange: (value: string) => void
   onVehicleTypeChange: (value: string) => void
@@ -35,7 +34,6 @@ const vehicleTypes = [
 export default function HistorySearch({
   search,
   vehicleType,
-  total,
   isLoading,
   onSearchChange,
   onVehicleTypeChange,
@@ -240,249 +238,6 @@ export default function HistorySearch({
         </div>
       </div>
 
-      {/* QUICK INFO */}
-      <div
-        className="
-          mt-8
-
-          grid grid-cols-1
-          gap-5
-
-          xl:grid-cols-3
-        "
-      >
-        {/* SEARCH SPEED */}
-        <div
-          className="
-            rounded-3xl
-
-            border border-white/10
-
-            bg-zinc-900/60
-
-            p-5
-          "
-        >
-          <div
-            className="
-              mb-4
-
-              flex items-center
-              gap-3
-            "
-          >
-            <Clock3 className="h-5 w-5 text-cyan-400" />
-
-            <h3
-              className="
-                text-sm
-                font-semibold
-
-                text-white
-              "
-            >
-              Search Speed
-            </h3>
-          </div>
-
-          <h2
-            className="
-              text-2xl
-              font-semibold
-              tracking-tight
-
-              text-cyan-400
-            "
-          >
-            Live
-          </h2>
-
-          <p
-            className="
-              mt-2
-
-              text-sm
-              text-zinc-400
-            "
-          >
-            PostgreSQL filtered query
-          </p>
-        </div>
-
-        {/* MATCH RESULTS */}
-        <div
-          className="
-            rounded-3xl
-
-            border border-white/10
-
-            bg-zinc-900/60
-
-            p-5
-          "
-        >
-          <div
-            className="
-              mb-4
-
-              flex items-center
-              gap-3
-            "
-          >
-            <ShieldAlert className="h-5 w-5 text-yellow-400" />
-
-            <h3
-              className="
-                text-sm
-                font-semibold
-
-                text-white
-              "
-            >
-              Match Results
-            </h3>
-          </div>
-
-          <h2
-            className="
-              text-2xl
-              font-semibold
-              tracking-tight
-
-              text-yellow-400
-            "
-          >
-            {isLoading ? "..." : total}
-          </h2>
-
-          <p
-            className="
-              mt-2
-
-              text-sm
-              text-zinc-400
-            "
-          >
-            Historical records found
-          </p>
-        </div>
-
-        {/* DATABASE */}
-        <div
-          className="
-            rounded-3xl
-
-            border border-white/10
-
-            bg-zinc-900/60
-
-            p-5
-          "
-        >
-          <div
-            className="
-              mb-4
-
-              flex items-center
-              gap-3
-            "
-          >
-            <Search className="h-5 w-5 text-green-400" />
-
-            <h3
-              className="
-                text-sm
-                font-semibold
-
-                text-white
-              "
-            >
-              Database Status
-            </h3>
-          </div>
-
-          <h2
-            className="
-              text-2xl
-              font-semibold
-              tracking-tight
-
-              text-green-400
-            "
-          >
-            Online
-          </h2>
-
-          <p
-            className="
-              mt-2
-
-              text-sm
-              text-zinc-400
-            "
-          >
-            Connected to central server
-          </p>
-        </div>
-      </div>
-
-      {/* RECENT SEARCH */}
-      <div className="mt-8">
-        <h3
-          className="
-            text-sm
-            font-semibold
-
-            text-white
-          "
-        >
-          Recent Searches
-        </h3>
-
-        <div
-          className="
-            mt-5
-
-            flex flex-wrap
-            gap-3
-          "
-        >
-          {["43A", "92B", "51H"].map((item) => (
-            <button
-              key={item}
-              type="button"
-              onClick={() => {
-                onSearchChange(item)
-              }}
-              className="
-                rounded-full
-
-                border border-cyan-500/20
-
-                bg-cyan-500/10
-
-                px-3 py-1.5
-
-                transition-all
-
-                hover:bg-cyan-500/20
-              "
-            >
-              <span
-                className="
-                  text-xs
-                  font-semibold
-
-                  text-cyan-400
-                "
-              >
-                {item}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* ACTIONS */}
       <div
         className="
@@ -525,7 +280,9 @@ export default function HistorySearch({
           </span>
         </button>
 
-        <div
+        <button
+          type="button"
+          disabled={isLoading}
           className="
             inline-flex items-center
             gap-2
@@ -538,6 +295,11 @@ export default function HistorySearch({
 
             px-4 py-2
 
+            transition-all
+
+            hover:bg-cyan-500/20
+            disabled:cursor-not-allowed
+            disabled:opacity-50
           "
         >
           <Search className="h-4 w-4 text-cyan-400" />
@@ -550,9 +312,9 @@ export default function HistorySearch({
               text-cyan-400
             "
           >
-            {isLoading ? "Searching" : "Search Active"}
+            {isLoading ? "Searching" : "Search"}
           </span>
-        </div>
+        </button>
       </div>
     </div>
   )
