@@ -82,6 +82,9 @@ def _debug_payload(
         "final_count": final_count,
         "crop_count": ocr_debug.get("crop_count", 0),
         "raw_ocr_candidates": ocr_debug.get("raw_ocr_candidates", []),
+        "ocr_engine_used": ocr_debug.get("ocr_engine_used", "none"),
+        "easyocr_candidates": ocr_debug.get("easyocr_candidates", []),
+        "paddleocr_candidates": ocr_debug.get("paddleocr_candidates", []),
         "best_ocr_text": ocr_debug.get("best_ocr_text"),
         "best_ocr_confidence": ocr_debug.get("best_ocr_confidence", 0),
         "weights": {
@@ -109,6 +112,9 @@ def run_inference(image_bytes: bytes) -> dict:
     ocr_debug = {
         "crop_count": 0,
         "raw_ocr_candidates": [],
+        "ocr_engine_used": "none",
+        "easyocr_candidates": [],
+        "paddleocr_candidates": [],
         "best_ocr_text": None,
         "best_ocr_confidence": 0,
     }
@@ -123,8 +129,13 @@ def run_inference(image_bytes: bytes) -> dict:
                 "accepted": ocr.accepted,
                 "reason": ocr.reason,
                 "candidates": ocr.candidates,
+                "engine_used": ocr.engine_used,
             }
         )
+        ocr_debug["easyocr_candidates"].extend(ocr.easyocr_candidates)
+        ocr_debug["paddleocr_candidates"].extend(ocr.paddleocr_candidates)
+        if ocr.accepted and ocr.engine_used != "none":
+            ocr_debug["ocr_engine_used"] = ocr.engine_used
         if ocr.confidence >= float(ocr_debug["best_ocr_confidence"]):
             ocr_debug["best_ocr_text"] = ocr.normalized_text or ocr.raw_ocr_text
             ocr_debug["best_ocr_confidence"] = ocr.confidence

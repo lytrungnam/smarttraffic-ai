@@ -1,10 +1,12 @@
 import logging
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import cv2
 import numpy as np
+
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -12,6 +14,8 @@ UNKNOWN_TEXT = "UNKNOWN"
 UNKNOWN_PLATE = "UNKNOWN_PLATE"
 
 _reader = None
+_paddle_reader = None
+_paddle_unavailable = False
 
 
 @dataclass
@@ -22,7 +26,10 @@ class OCRResult:
     confidence: float
     accepted: bool
     reason: str
-    candidates: list[dict]
+    candidates: list[dict] = field(default_factory=list)
+    engine_used: str = "none"
+    easyocr_candidates: list[dict] = field(default_factory=list)
+    paddleocr_candidates: list[dict] = field(default_factory=list)
 
 
 def _get_reader():
@@ -37,6 +44,37 @@ def _get_reader():
             model_storage_directory=str(Path("/app/.EasyOCR")),
         )
     return _reader
+
+
+def _get_paddle_reader():
+    global _paddle_reader, _paddle_unavailable
+
+    if _paddle_unavailable:
+        return None
+
+    if _paddle_reader is None:
+        try:
+            logger.info("[AI] Loading PaddleOCR reader")
+            from paddleocr import PaddleOCR
+
+            _paddle_reader = PaddleOCR(
+                use_angle_cls=True,
+                lang="en",
+                show_log=False,
+            )
+        except Exception as exc:
+            _paddle_unavailable = True
+            logger.warning(
+                "[OCR] PaddleOCR unavailable; falling back to EasyOCR: %s",
+                exc,
+            )
+            return None
+
+    return _paddle_reader
+
+
+def _is_paddle_unavailable() -> bool:
+    return _paddle_unavailable
 
 
 # =====================================
@@ -125,9 +163,25 @@ PROVINCE_CODES = {
 
 
 def normalize_plate(text: str) -> str:
-    """Normalize without converting valid Vietnamese series letters to digits."""
     text = text.upper()
     return re.sub(r"[^A-Z0-9]", "", text)
+
+
+def _apply_safe_substitutions(text: str) -> str:
+    return (
+        text.replace("O", "0")
+        .replace("I", "1")
+        .replace("S", "5")
+        .replace("G", "6")
+    )
+
+
+def _normalization_options(text: str) -> list[tuple[str, bool]]:
+    normalized = normalize_plate(text)
+    substituted = _apply_safe_substitutions(normalized)
+    if substituted != normalized:
+        return [(normalized, False), (substituted, True)]
+    return [(normalized, False)]
 
 
 def _is_plate_like(text: str) -> tuple[bool, str]:
@@ -150,6 +204,31 @@ def _is_plate_like(text: str) -> tuple[bool, str]:
         return False, "numeric-only OCR text is too short"
 
     return True, "accepted plate-like OCR text"
+
+
+def _candidate_from_text(
+    *,
+    engine: str,
+    variant: str,
+    raw_text: str,
+    confidence: float,
+) -> list[dict]:
+    candidates = []
+    for normalized, used_substitution in _normalization_options(raw_text):
+        accepted, reason = _is_plate_like(normalized)
+        candidates.append(
+            {
+                "engine": engine,
+                "variant": variant,
+                "raw_text": raw_text,
+                "normalized_text": normalized,
+                "confidence": confidence,
+                "accepted": accepted,
+                "reason": reason,
+                "used_substitution": used_substitution,
+            }
+        )
+    return candidates
 
 
 def format_vn_plate(text: str) -> str:
@@ -235,6 +314,195 @@ def _prepare_ocr_images(plate_image: np.ndarray) -> list[tuple[str, np.ndarray]]
     return variants
 
 
+def _run_easyocr(
+    variants: list[tuple[str, np.ndarray]],
+    *,
+    context: str,
+) -> list[dict]:
+    candidates: list[dict] = []
+    reader = _get_reader()
+    for variant_name, image in variants:
+        raw_results = reader.readtext(image, detail=1, paragraph=False)
+        logger.info(
+            "[OCR] %s engine=easyocr variant=%s raw_result=%s",
+            context,
+            variant_name,
+            raw_results,
+        )
+
+        for raw_result in raw_results:
+            raw_text = str(raw_result[1])
+            confidence = float(raw_result[2])
+            new_candidates = _candidate_from_text(
+                engine="easyocr",
+                variant=variant_name,
+                raw_text=raw_text,
+                confidence=confidence,
+            )
+            candidates.extend(new_candidates)
+            for candidate in new_candidates:
+                logger.info(
+                    "[OCR] %s engine=easyocr raw=%r normalized=%r "
+                    "confidence=%.3f accepted=%s reason=%s",
+                    context,
+                    raw_text,
+                    candidate["normalized_text"],
+                    confidence,
+                    candidate["accepted"],
+                    candidate["reason"],
+                )
+
+    return candidates
+
+
+def _iter_paddle_text_results(raw_results) -> list[tuple[str, float]]:
+    text_results: list[tuple[str, float]] = []
+
+    if not raw_results:
+        return text_results
+
+    for page_result in raw_results:
+        if isinstance(page_result, dict):
+            texts = page_result.get("rec_texts") or []
+            scores = page_result.get("rec_scores") or []
+            for text, score in zip(texts, scores, strict=False):
+                text_results.append((str(text), float(score)))
+            continue
+
+        if not page_result:
+            continue
+
+        for item in page_result:
+            if (
+                isinstance(item, (list, tuple))
+                and len(item) >= 2
+                and isinstance(item[1], (list, tuple))
+                and len(item[1]) >= 2
+            ):
+                text_results.append((str(item[1][0]), float(item[1][1])))
+            elif (
+                isinstance(item, (list, tuple))
+                and len(item) >= 2
+                and isinstance(item[0], str)
+            ):
+                text_results.append((str(item[0]), float(item[1])))
+
+    return text_results
+
+
+def _run_paddleocr(
+    variants: list[tuple[str, np.ndarray]],
+    *,
+    context: str,
+) -> list[dict]:
+    candidates: list[dict] = []
+    reader = _get_paddle_reader()
+    if reader is None:
+        return candidates
+
+    for variant_name, image in variants:
+        try:
+            raw_results = reader.ocr(image, cls=True)
+        except Exception as exc:
+            logger.warning(
+                "[OCR] %s PaddleOCR failed for variant=%s: %s",
+                context,
+                variant_name,
+                exc,
+            )
+            continue
+
+        logger.info(
+            "[OCR] %s engine=paddleocr variant=%s raw_result=%s",
+            context,
+            variant_name,
+            raw_results,
+        )
+
+        for raw_text, confidence in _iter_paddle_text_results(raw_results):
+            new_candidates = _candidate_from_text(
+                engine="paddleocr",
+                variant=variant_name,
+                raw_text=raw_text,
+                confidence=confidence,
+            )
+            candidates.extend(new_candidates)
+            for candidate in new_candidates:
+                logger.info(
+                    "[OCR] %s engine=paddleocr raw=%r normalized=%r "
+                    "confidence=%.3f accepted=%s reason=%s",
+                    context,
+                    raw_text,
+                    candidate["normalized_text"],
+                    confidence,
+                    candidate["accepted"],
+                    candidate["reason"],
+                )
+
+    return candidates
+
+
+def _best_candidate(candidates: list[dict]) -> dict | None:
+    if not candidates:
+        return None
+
+    accepted_candidates = [
+        candidate for candidate in candidates if candidate["accepted"]
+    ]
+    if accepted_candidates:
+        return max(
+            accepted_candidates,
+            key=lambda candidate: (
+                candidate["confidence"],
+                len(candidate["normalized_text"]),
+            ),
+        )
+
+    return max(candidates, key=lambda candidate: candidate["confidence"])
+
+
+def _result_from_candidates(
+    *,
+    candidates: list[dict],
+    easyocr_candidates: list[dict],
+    paddleocr_candidates: list[dict],
+    unknown_value: str,
+    default_reason: str,
+) -> OCRResult:
+    best = _best_candidate(candidates)
+    if best is None:
+        return OCRResult(
+            plate_text=unknown_value,
+            raw_ocr_text="",
+            normalized_text="",
+            confidence=0.0,
+            accepted=False,
+            reason=default_reason,
+            candidates=candidates,
+            engine_used="none",
+            easyocr_candidates=easyocr_candidates,
+            paddleocr_candidates=paddleocr_candidates,
+        )
+
+    accepted = bool(best["accepted"])
+    return OCRResult(
+        plate_text=(
+            format_vn_plate(best["normalized_text"])
+            if accepted
+            else unknown_value
+        ),
+        raw_ocr_text=best["raw_text"],
+        normalized_text=best["normalized_text"],
+        confidence=float(best["confidence"]),
+        accepted=accepted,
+        reason=str(best["reason"]),
+        candidates=candidates,
+        engine_used=str(best["engine"]) if accepted else "none",
+        easyocr_candidates=easyocr_candidates,
+        paddleocr_candidates=paddleocr_candidates,
+    )
+
+
 def read_plate_ocr(
     plate_image: np.ndarray | None,
     *,
@@ -246,94 +514,66 @@ def read_plate_ocr(
         return OCRResult(unknown_value, "", "", 0.0, False, "empty plate crop", [])
 
     logger.info("[OCR] %s crop_shape=%s", context, tuple(plate_image.shape))
-
-    best_result = OCRResult(
-        plate_text=unknown_value,
-        raw_ocr_text="",
-        normalized_text="",
-        confidence=0.0,
-        accepted=False,
-        reason="no OCR text detected",
-        candidates=[],
-    )
-    candidates: list[dict] = []
+    engine = settings.OCR_ENGINE
+    variants = _prepare_ocr_images(plate_image)
+    easyocr_candidates: list[dict] = []
+    paddleocr_candidates: list[dict] = []
 
     try:
-        reader = _get_reader()
-        for variant_name, image in _prepare_ocr_images(plate_image):
-            raw_results = reader.readtext(image, detail=1, paragraph=False)
-            logger.info(
-                "[OCR] %s variant=%s raw_result=%s",
-                context,
-                variant_name,
-                raw_results,
-            )
+        if engine in ("easyocr", "hybrid"):
+            easyocr_candidates = _run_easyocr(variants, context=context)
 
-            for raw_result in raw_results:
-                raw_text = str(raw_result[1])
-                confidence = float(raw_result[2])
-                normalized = normalize_plate(raw_text)
-                accepted, reason = _is_plate_like(normalized)
-                candidate = {
-                    "variant": variant_name,
-                    "raw_text": raw_text,
-                    "normalized_text": normalized,
-                    "confidence": confidence,
-                    "accepted": accepted,
-                    "reason": reason,
-                }
-                candidates.append(candidate)
+        easyocr_result = _result_from_candidates(
+            candidates=easyocr_candidates,
+            easyocr_candidates=easyocr_candidates,
+            paddleocr_candidates=[],
+            unknown_value=unknown_value,
+            default_reason="no EasyOCR text detected",
+        )
 
-                logger.info(
-                    "[OCR] %s raw=%r normalized=%r confidence=%.3f "
-                    "accepted=%s reason=%s",
-                    context,
-                    raw_text,
-                    normalized,
-                    confidence,
-                    accepted,
-                    reason,
+        if engine == "easyocr" or (
+            engine == "hybrid" and easyocr_result.accepted
+        ):
+            result = easyocr_result
+        else:
+            if engine in ("paddleocr", "hybrid"):
+                paddleocr_candidates = _run_paddleocr(
+                    variants,
+                    context=context,
                 )
-
-                if not accepted:
-                    if confidence > best_result.confidence:
-                        best_result = OCRResult(
-                            plate_text=unknown_value,
-                            raw_ocr_text=raw_text,
-                            normalized_text=normalized,
-                            confidence=confidence,
-                            accepted=False,
-                            reason=reason,
-                            candidates=candidates,
-                        )
-                    continue
-
-                if confidence >= best_result.confidence:
-                    best_result = OCRResult(
-                        plate_text=format_vn_plate(normalized),
-                        raw_ocr_text=raw_text,
-                        normalized_text=normalized,
-                        confidence=confidence,
-                        accepted=True,
-                        reason=reason,
-                        candidates=candidates,
-                    )
-
+            if (
+                engine == "paddleocr"
+                and _is_paddle_unavailable()
+                and not easyocr_candidates
+            ):
+                easyocr_candidates = _run_easyocr(variants, context=context)
+            result = _result_from_candidates(
+                candidates=[*easyocr_candidates, *paddleocr_candidates],
+                easyocr_candidates=easyocr_candidates,
+                paddleocr_candidates=paddleocr_candidates,
+                unknown_value=unknown_value,
+                default_reason="no OCR text detected",
+            )
     except Exception as exc:
         logger.exception("[OCR] %s failed: %s", context, exc)
-        return OCRResult(unknown_value, "", "", 0.0, False, str(exc), candidates)
+        result = _result_from_candidates(
+            candidates=[*easyocr_candidates, *paddleocr_candidates],
+            easyocr_candidates=easyocr_candidates,
+            paddleocr_candidates=paddleocr_candidates,
+            unknown_value=unknown_value,
+            default_reason=str(exc),
+        )
 
-    if not best_result.accepted:
+    if not result.accepted:
         logger.warning(
             "[OCR] %s unreadable: raw=%r normalized=%r reason=%s",
             context,
-            best_result.raw_ocr_text,
-            best_result.normalized_text,
-            best_result.reason,
+            result.raw_ocr_text,
+            result.normalized_text,
+            result.reason,
         )
 
-    best_result.candidates = candidates
-    return best_result
+    return result
 
 
 def read_plate_text(plate_image: np.ndarray | None) -> str:
