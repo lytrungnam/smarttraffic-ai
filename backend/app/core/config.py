@@ -109,6 +109,8 @@ class Settings(BaseSettings):
     FREE_DAILY_LIMIT_MINUTES: int = 120
     ENABLE_AI_STARTUP: bool = False
     CAMERA_SOURCE: str | None = None
+    VEHICLE_CONFIDENCE_THRESHOLD: float = 0.25
+    PLATE_CONFIDENCE_THRESHOLD: float = 0.25
 
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":

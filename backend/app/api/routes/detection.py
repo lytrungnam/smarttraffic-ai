@@ -1,7 +1,7 @@
 import asyncio
 import time
 
-from fastapi import APIRouter, File, Query, UploadFile
+from fastapi import APIRouter, File, HTTPException, Query, UploadFile
 from fastapi.responses import StreamingResponse
 
 import app.services.frame_buffer as fb
@@ -42,7 +42,13 @@ async def upload_detection(
     file: UploadFile = File(...),
 ):
     contents = await file.read()
-    results = await process_detection(contents)
+    try:
+        inference = await process_detection(contents)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+    results = inference["results"]
+    debug = inference["debug"]
 
     saved = []
 
@@ -74,7 +80,13 @@ async def upload_detection(
         await manager.broadcast(payload)
         saved.append(payload)
 
-    return {"results": saved, "total": len(saved)}
+    debug["final_count"] = len(saved)
+
+    return {
+        "results": saved,
+        "total": len(saved),
+        "debug": debug,
+    }
 
 
 # =====================================

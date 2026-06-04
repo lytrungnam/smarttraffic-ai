@@ -23,6 +23,19 @@ type UploadResult = {
   status?: string
 }
 
+type UploadDebug = {
+  image_read: boolean
+  image_shape: number[] | null
+  vehicle_count: number
+  plate_count: number
+  ocr_count: number
+  final_count: number
+  weights: {
+    vehicle: string
+    plate: string
+  }
+}
+
 type SelectedFile = {
   file: File
   progress: number
@@ -32,6 +45,7 @@ export default function DetectionUpload() {
   const [selected, setSelected] = useState<SelectedFile | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [results, setResults] = useState<UploadResult[]>([])
+  const [debug, setDebug] = useState<UploadDebug | null>(null)
   const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -40,6 +54,7 @@ export default function DetectionUpload() {
     if (!file) return
     setSelected({ file, progress: 0 })
     setResults([])
+    setDebug(null)
     setError(null)
   }
 
@@ -49,12 +64,14 @@ export default function DetectionUpload() {
     if (!file) return
     setSelected({ file, progress: 0 })
     setResults([])
+    setDebug(null)
     setError(null)
   }
 
   const handleRemove = () => {
     setSelected(null)
     setResults([])
+    setDebug(null)
     setError(null)
     if (inputRef.current) inputRef.current.value = ""
   }
@@ -65,12 +82,16 @@ export default function DetectionUpload() {
     setIsUploading(true)
     setError(null)
     setResults([])
+    setDebug(null)
 
     const formData = new FormData()
     formData.append("file", selected.file)
 
     try {
-      const response = await axios.post<{ results: UploadResult[] }>(
+      const response = await axios.post<{
+        results: UploadResult[]
+        debug?: UploadDebug
+      }>(
         `${API_URL}/detections/upload`,
         formData,
         {
@@ -82,6 +103,7 @@ export default function DetectionUpload() {
         },
       )
       setResults(response.data.results)
+      setDebug(response.data.debug ?? null)
     } catch {
       setError("Upload failed. Make sure the backend is running and the file is a valid image.")
     } finally {
@@ -220,6 +242,12 @@ export default function DetectionUpload() {
         )}
 
         {/* RESULTS */}
+        {debug && results.length === 0 && !isUploading && (
+          <div className="mt-5 rounded-2xl border border-yellow-500/20 bg-yellow-500/10 p-4 text-sm font-semibold text-yellow-300">
+            Không phát hiện được biển số. Vui lòng thử ảnh rõ hơn hoặc ảnh nguyên xe.
+          </div>
+        )}
+
         {results.length > 0 && (
           <div className="mt-5 space-y-3">
             <h3 className="text-sm font-semibold text-zinc-400">Detection Results</h3>

@@ -15,5 +15,5 @@ def serialize_detection(detection: Detection) -> dict:
     }
 
 
-async def process_detection(file_bytes: bytes) -> list[dict]:
+async def process_detection(file_bytes: bytes) -> dict:
     return run_inference(file_bytes)
