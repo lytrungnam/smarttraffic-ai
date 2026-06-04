@@ -75,7 +75,7 @@ export function normalizeVehicleClass(value: string | undefined | null) {
 export function getVehicleClassLabel(value: string | undefined | null) {
   const normalized = normalizeVehicleClass(value)
   if (normalized) return VEHICLE_CLASS_LABELS[normalized]
-  return value ? "Unclassified" : "Unknown Detection"
+  return value ? "Unclassified Vehicle" : "Unknown Detection"
 }
 
 export const FALLBACK_VEHICLE_ICON = Activity

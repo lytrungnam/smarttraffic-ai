@@ -14,6 +14,13 @@ import {
   getEvidenceImageUrl,
   getLatestDetections,
 } from "@/services/detectionService"
+import {
+  LOW_OCR_CONFIDENCE_MESSAGE,
+  formatPlateNumber,
+  getDetectionStatusLabel,
+  getOcrStatusLabel,
+  isLowOcrConfidence,
+} from "@/utils/plateDisplay"
 
 export default function DetectionPreview() {
   const [detections, setDetections] = useState<DetectionItem[]>([])
@@ -33,7 +40,7 @@ export default function DetectionPreview() {
     if (!evidenceUrl) return
     const a = document.createElement("a")
     a.href = evidenceUrl
-    a.download = `evidence-${previewDetection?.plate_number ?? "unknown"}.jpg`
+    a.download = `evidence-${formatPlateNumber(previewDetection?.plate_number)}.jpg`
     a.click()
   }
 
@@ -140,34 +147,48 @@ export default function DetectionPreview() {
 
             {/* RESULT CARDS */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {detections.map((item, i) => (
-                <button
-                  type="button"
-                  key={item.id ?? item.plate_number}
-                  onClick={() => setPreviewIndex(i)}
-                  className={`w-full rounded-3xl border p-5 text-left transition-all hover:border-cyan-500/20 ${
-                    previewIndex === i
-                      ? "border-cyan-500/40 bg-cyan-500/5"
-                      : "border-white/10 bg-zinc-900/60"
-                  }`}
-                >
-                  <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <h3 className="text-xl font-semibold tracking-tight text-white">
-                        {item.plate_number}
-                      </h3>
-                      <p className="mt-2 text-sm text-zinc-400">
-                        {getVehicleClassLabel(item.vehicle_type)}
-                      </p>
-                    </div>
+              {detections.map((item, i) => {
+                const lowConfidence = isLowOcrConfidence(
+                  item.confidence,
+                  item.plate_number,
+                )
 
-                    <div className="inline-flex items-center gap-2 rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1.5 text-green-400">
-                      <CheckCircle2 className="h-4 w-4" />
-                      <span className="text-xs font-semibold">
-                        {item.status || "detected"}
-                      </span>
+                return (
+                  <button
+                    type="button"
+                    key={item.id ?? item.plate_number}
+                    onClick={() => setPreviewIndex(i)}
+                    className={`w-full rounded-3xl border p-5 text-left transition-all hover:border-cyan-500/20 ${
+                      previewIndex === i
+                        ? "border-cyan-500/40 bg-cyan-500/5"
+                        : "border-white/10 bg-zinc-900/60"
+                    }`}
+                  >
+                    <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <h3 className="text-xl font-semibold tracking-tight text-white">
+                          {formatPlateNumber(item.plate_number)}
+                        </h3>
+                        <p className="mt-2 text-sm text-zinc-400">
+                          {getVehicleClassLabel(item.vehicle_type)}
+                        </p>
+                      </div>
+
+                      <div
+                        className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 ${
+                          lowConfidence
+                            ? "border-yellow-500/20 bg-yellow-500/10 text-yellow-300"
+                            : "border-green-500/20 bg-green-500/10 text-green-400"
+                        }`}
+                      >
+                        <CheckCircle2 className="h-4 w-4" />
+                        <span className="text-xs font-semibold">
+                          {lowConfidence
+                            ? getOcrStatusLabel(item.plate_number)
+                            : getDetectionStatusLabel(item.status)}
+                        </span>
+                      </div>
                     </div>
-                  </div>
 
                   {/* CONFIDENCE BAR */}
                   <div className="mt-6">
@@ -175,26 +196,48 @@ export default function DetectionPreview() {
                       <span className="text-xs font-semibold text-zinc-400">
                         OCR Confidence
                       </span>
-                      <span className="text-sm font-semibold text-cyan-400">
+                      <span
+                        className={`text-sm font-semibold ${
+                          lowConfidence ? "text-yellow-300" : "text-cyan-400"
+                        }`}
+                      >
                         {item.confidence ?? 0}%
                       </span>
                     </div>
                     <div className="h-2.5 w-full overflow-hidden rounded-full bg-zinc-800">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-500"
+                        className={`h-full rounded-full ${
+                          lowConfidence
+                            ? "bg-gradient-to-r from-yellow-400 to-amber-500"
+                            : "bg-gradient-to-r from-cyan-500 to-blue-500"
+                        }`}
                         style={{ width: `${item.confidence ?? 0}%` }}
                       />
                     </div>
+                    {lowConfidence && (
+                      <p className="mt-3 text-xs font-semibold text-yellow-300">
+                        {LOW_OCR_CONFIDENCE_MESSAGE}
+                      </p>
+                    )}
                   </div>
 
                   <div className="mt-6 flex items-center gap-2">
-                    <ScanLine className="h-4 w-4 text-cyan-400" />
-                    <span className="text-xs font-semibold text-cyan-400">
-                      OCR Completed
+                    <ScanLine
+                      className={`h-4 w-4 ${
+                        lowConfidence ? "text-yellow-300" : "text-cyan-400"
+                      }`}
+                    />
+                    <span
+                      className={`text-xs font-semibold ${
+                        lowConfidence ? "text-yellow-300" : "text-cyan-400"
+                      }`}
+                    >
+                      {getOcrStatusLabel(item.plate_number)}
                     </span>
                   </div>
-                </button>
-              ))}
+                  </button>
+                )
+              })}
             </div>
           </>
         )}

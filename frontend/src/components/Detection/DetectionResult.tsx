@@ -17,6 +17,16 @@ import EvidencePreviewDialog from "@/components/History/EvidencePreviewDialog"
 import { getVehicleClassLabel } from "@/constants/vehicleClasses"
 import type { DetectionItem } from "@/services/detectionService"
 import { getLatestDetections } from "@/services/detectionService"
+import {
+  EVIDENCE_SAVED_LABEL,
+  EVIDENCE_SAVED_MESSAGE,
+  LOW_OCR_CONFIDENCE_MESSAGE,
+  formatPlateNumber,
+  formatPlateStatus,
+  getDetectionStatusLabel,
+  getOcrStatusLabel,
+  isLowOcrConfidence,
+} from "@/utils/plateDisplay"
 
 const formatDetectionTime = (createdAt?: string) => {
   if (!createdAt) {
@@ -162,9 +172,15 @@ export default function DetectionResult() {
           )}
 
           {!isLoading &&
-            detectionResults.map((item) => (
-              <div
-                key={item.id ?? item.plate_number}
+            detectionResults.map((item) => {
+              const lowConfidence = isLowOcrConfidence(
+                item.confidence,
+                item.plate_number,
+              )
+
+              return (
+                <div
+                  key={item.id ?? item.plate_number}
                 className="
                   group relative overflow-hidden
                   rounded-3xl
@@ -174,137 +190,163 @@ export default function DetectionResult() {
                   transition-all duration-300
                   hover:border-cyan-500/20
                 "
-              >
-                <div className="absolute right-0 top-0 h-40 w-40 bg-cyan-500/5 blur-3xl" />
+                >
+                  <div className="absolute right-0 top-0 h-40 w-40 bg-cyan-500/5 blur-3xl" />
 
-                <div className="relative">
-                  <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="flex items-start gap-5">
-                      <div className="rounded-3xl border border-white/10 bg-black/30 p-5">
-                        <Car className="h-8 w-8 text-cyan-400" />
-                      </div>
+                  <div className="relative">
+                    <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                      <div className="flex items-start gap-5">
+                        <div className="rounded-3xl border border-white/10 bg-black/30 p-5">
+                          <Car className="h-8 w-8 text-cyan-400" />
+                        </div>
 
-                      <div>
-                        <h3 className="text-2xl font-semibold tracking-tight text-white">
-                          {item.plate_number}
-                        </h3>
+                        <div>
+                          <h3 className="text-2xl font-semibold tracking-tight text-white">
+                            {formatPlateNumber(item.plate_number)}
+                          </h3>
 
-                        <div className="mt-3 flex flex-wrap items-center gap-3">
-                          <span className="text-sm font-semibold text-zinc-300">
-                            {getVehicleClassLabel(item.vehicle_type)}
-                          </span>
+                          <p className="mt-2 max-w-xl text-sm text-zinc-400">
+                            {formatPlateStatus(item.plate_number)}
+                          </p>
 
-                          <span className="text-zinc-600">•</span>
+                          <div className="mt-3 flex flex-wrap items-center gap-3">
+                            <span className="text-sm font-semibold text-zinc-300">
+                              {getVehicleClassLabel(item.vehicle_type)}
+                            </span>
 
-                          <div className="flex items-center gap-2 text-sm text-zinc-400">
-                            <MapPin className="h-4 w-4" />
-                            <span>{item.location || "Smart Camera"}</span>
+                            <span className="text-zinc-600">•</span>
+
+                            <div className="flex items-center gap-2 text-sm text-zinc-400">
+                              <MapPin className="h-4 w-4" />
+                              <span>{item.location || "Smart Camera"}</span>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div
-                      className="
+                      <div
+                        className={`
                         inline-flex items-center gap-2
                         rounded-full
-                        border border-green-500/20
-                        bg-green-500/10
+                        border
                         px-3 py-1.5
-                        text-green-400
-                      "
-                    >
-                      <ShieldAlert className="h-4 w-4" />
-                      <span className="text-xs font-semibold">
-                        {item.status || "detected"}
-                      </span>
+                        ${
+                          lowConfidence
+                            ? "border-yellow-500/20 bg-yellow-500/10 text-yellow-300"
+                            : "border-green-500/20 bg-green-500/10 text-green-400"
+                        }
+                      `}
+                      >
+                        <ShieldAlert className="h-4 w-4" />
+                        <span className="text-xs font-semibold">
+                          {lowConfidence
+                            ? getOcrStatusLabel(item.plate_number)
+                            : getDetectionStatusLabel(item.status)}
+                        </span>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-                    <div className="rounded-3xl border border-white/10 bg-black/20 p-5">
-                      <div className="mb-5 flex items-center gap-3">
-                        <ScanLine className="h-5 w-5 text-cyan-400" />
-                        <h4 className="text-sm font-semibold text-white">
-                          OCR Confidence
-                        </h4>
+                    <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+                      <div className="rounded-3xl border border-white/10 bg-black/20 p-5">
+                        <div className="mb-5 flex items-center gap-3">
+                          <ScanLine className="h-5 w-5 text-cyan-400" />
+                          <h4 className="text-sm font-semibold text-white">
+                            OCR Confidence
+                          </h4>
+                        </div>
+
+                        <div className="mb-4 flex items-end justify-between">
+                          <h2
+                            className={`text-2xl font-semibold tracking-tight ${
+                              lowConfidence ? "text-yellow-300" : "text-cyan-400"
+                            }`}
+                          >
+                            {item.confidence ?? 0}%
+                          </h2>
+                          <CheckCircle2
+                            className={`h-5 w-5 ${
+                              lowConfidence ? "text-yellow-300" : "text-green-400"
+                            }`}
+                          />
+                        </div>
+
+                        <div className="h-2.5 w-full overflow-hidden rounded-full bg-zinc-800">
+                          <div
+                            className={`h-full rounded-full ${
+                              lowConfidence
+                                ? "bg-gradient-to-r from-yellow-400 to-amber-500"
+                                : "bg-gradient-to-r from-cyan-500 to-blue-500"
+                            }`}
+                            style={{
+                              width: `${item.confidence ?? 0}%`,
+                            }}
+                          />
+                        </div>
+                        {lowConfidence && (
+                          <p className="mt-3 text-sm font-semibold text-yellow-300">
+                            {LOW_OCR_CONFIDENCE_MESSAGE}
+                          </p>
+                        )}
                       </div>
 
-                      <div className="mb-4 flex items-end justify-between">
-                        <h2 className="text-2xl font-semibold tracking-tight text-cyan-400">
-                          {item.confidence ?? 0}%
+                      <div className="rounded-3xl border border-white/10 bg-black/20 p-5">
+                        <div className="mb-5 flex items-center gap-3">
+                          <Clock3 className="h-5 w-5 text-purple-400" />
+                          <h4 className="text-sm font-semibold text-white">
+                            Detection Time
+                          </h4>
+                        </div>
+
+                        <h2 className="text-lg font-semibold tracking-tight text-white">
+                          {formatDetectionTime(item.created_at)}
                         </h2>
-                        <CheckCircle2 className="h-5 w-5 text-green-400" />
+
+                        <p className="mt-3 text-sm text-zinc-400">
+                          Stored monitoring event
+                        </p>
                       </div>
 
-                      <div className="h-2.5 w-full overflow-hidden rounded-full bg-zinc-800">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-500"
-                          style={{
-                            width: `${item.confidence ?? 0}%`,
-                          }}
-                        />
+                      <div className="rounded-3xl border border-white/10 bg-black/20 p-5">
+                        <div className="mb-5 flex items-center gap-3">
+                          <FileSearch className="h-5 w-5 text-yellow-400" />
+                          <h4 className="text-sm font-semibold text-white">
+                            Evidence
+                          </h4>
+                        </div>
+
+                        <h2 className="text-2xl font-semibold tracking-tight text-yellow-400">
+                          {item.image_path ? EVIDENCE_SAVED_LABEL : "Unavailable"}
+                        </h2>
+
+                        <p className="mt-3 text-sm text-zinc-400">
+                          {item.image_path
+                            ? EVIDENCE_SAVED_MESSAGE
+                            : "No evidence image is available."}
+                        </p>
                       </div>
                     </div>
 
-                    <div className="rounded-3xl border border-white/10 bg-black/20 p-5">
-                      <div className="mb-5 flex items-center gap-3">
-                        <Clock3 className="h-5 w-5 text-purple-400" />
-                        <h4 className="text-sm font-semibold text-white">
-                          Detection Time
-                        </h4>
+                    <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 animate-pulse rounded-full bg-green-400" />
+                        <span className="text-xs font-semibold text-green-400">
+                          AI Detection Stored
+                        </span>
                       </div>
 
-                      <h2 className="text-lg font-semibold tracking-tight text-white">
-                        {formatDetectionTime(item.created_at)}
-                      </h2>
-
-                      <p className="mt-3 text-sm text-zinc-400">
-                        Stored monitoring event
-                      </p>
-                    </div>
-
-                    <div className="rounded-3xl border border-white/10 bg-black/20 p-5">
-                      <div className="mb-5 flex items-center gap-3">
-                        <FileSearch className="h-5 w-5 text-yellow-400" />
-                        <h4 className="text-sm font-semibold text-white">
-                          Evidence
-                        </h4>
-                      </div>
-
-                      <h2 className="text-2xl font-semibold tracking-tight text-yellow-400">
-                        {item.image_path ? "Stored" : "Unavailable"}
-                      </h2>
-
-                      <p className="mt-3 text-sm text-zinc-400">
-                        {item.image_path
-                          ? "Evidence image path saved"
-                          : "No image path stored"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="h-2 w-2 animate-pulse rounded-full bg-green-400" />
-                      <span className="text-xs font-semibold text-green-400">
-                        AI Detection Stored
-                      </span>
-                    </div>
-
-                    <button
-                      type="button"
-                      disabled={!item.image_path}
-                      title={
-                        item.image_path
-                          ? "View stored evidence image"
-                          : "No evidence image path stored for this detection."
-                      }
-                      onClick={() => {
-                        setSelectedDetection(item)
-                        setIsEvidenceOpen(true)
-                      }}
-                      className="
+                      <button
+                        type="button"
+                        disabled={!item.image_path}
+                        title={
+                          item.image_path
+                            ? "View stored evidence image"
+                            : "No evidence image is available for this detection."
+                        }
+                        onClick={() => {
+                          setSelectedDetection(item)
+                          setIsEvidenceOpen(true)
+                        }}
+                        className="
                         inline-flex items-center gap-2
                         rounded-full
                         border border-cyan-500/20
@@ -315,15 +357,16 @@ export default function DetectionResult() {
                         disabled:cursor-not-allowed
                         disabled:opacity-50
                       "
-                    >
-                      <span className="text-xs font-semibold text-cyan-400">
-                        View Evidence
-                      </span>
-                    </button>
+                      >
+                        <span className="text-xs font-semibold text-cyan-400">
+                          View Evidence
+                        </span>
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
         </div>
       </div>
     </>

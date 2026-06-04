@@ -1,7 +1,9 @@
 import { Camera, FlipHorizontal, Zap, Square, Play } from "lucide-react"
 import { useEffect } from "react"
+import { getVehicleClassLabel } from "@/constants/vehicleClasses"
 import { useMobileCamera } from "@/hooks/useMobileCamera"
 import { useWebSocketStream } from "@/hooks/useWebSocketStream"
+import { formatPlateNumber } from "@/utils/plateDisplay"
 
 type Props = {
   token?: string
@@ -225,17 +227,17 @@ export default function MobileCameraStream({ token = "", cameraId = 99 }: Props)
         {latest ? (
           <div className="mb-4 overflow-hidden rounded-2xl border border-cyan-500/20 bg-zinc-900">
             <div className="bg-cyan-500/5 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-cyan-500">
-              Vừa nhận diện
+              Latest Detection
             </div>
             <div className="px-4 py-4">
               <div className="flex items-center gap-3">
                 <span className="text-3xl">🚗</span>
                 <div>
                   <p className="text-2xl font-black tracking-widest text-white">
-                    {latest.plate_number}
+                    {formatPlateNumber(latest.plate_number)}
                   </p>
                   <p className="mt-0.5 text-sm text-zinc-400">
-                    {latest.vehicle_type} · Confidence: {Math.round(latest.confidence * 100)}%
+                    {getVehicleClassLabel(latest.vehicle_type)} · Confidence: {Math.round(latest.confidence * 100)}%
                   </p>
                   <p className="mt-0.5 text-xs text-zinc-600">
                     {new Date().toLocaleTimeString("vi-VN")}
@@ -258,8 +260,12 @@ export default function MobileCameraStream({ token = "", cameraId = 99 }: Props)
             {stream.detections.slice(1, 5).map((d, i) => (
               <div key={i} className="flex items-center justify-between rounded-xl bg-zinc-900/60 px-3 py-2">
                 <div>
-                  <p className="text-sm font-semibold text-white">{d.plate_number}</p>
-                  <p className="text-xs text-zinc-500">{d.vehicle_type}</p>
+                  <p className="text-sm font-semibold text-white">
+                    {formatPlateNumber(d.plate_number)}
+                  </p>
+                  <p className="text-xs text-zinc-500">
+                    {getVehicleClassLabel(d.vehicle_type)}
+                  </p>
                 </div>
                 <span className="text-xs text-cyan-400">{Math.round(d.confidence * 100)}%</span>
               </div>

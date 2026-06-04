@@ -11,6 +11,10 @@ import type {
   DetectionRealtimePayload,
 } from "@/services/detectionService"
 import { getLatestDetections } from "@/services/detectionService"
+import {
+  formatPlateNumber,
+  getDetectionStatusLabel,
+} from "@/utils/plateDisplay"
 
 const isDetectionItem = (value: unknown): value is DetectionItem => {
   return (
@@ -132,7 +136,7 @@ export default function DetectionRealtime() {
 
                     <div className="min-w-0">
                       <h3 className="text-xl font-semibold tracking-tight text-white">
-                        {item.plate_number}
+                        {formatPlateNumber(item.plate_number)}
                       </h3>
 
                       <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
@@ -176,7 +180,7 @@ export default function DetectionRealtime() {
 
                   <div className="inline-flex items-center gap-2 rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1.5 text-green-400">
                     <span className="text-xs font-semibold">
-                      {item.status || "detected"}
+                      {getDetectionStatusLabel(item.status)}
                     </span>
                   </div>
 

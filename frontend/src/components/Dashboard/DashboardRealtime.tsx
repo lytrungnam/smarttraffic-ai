@@ -2,6 +2,10 @@ import { Activity, Car, Clock3, Wifi } from "lucide-react"
 
 import { getVehicleClassLabel } from "@/constants/vehicleClasses"
 import type { DetectionItem } from "@/services/detectionService"
+import {
+  formatPlateNumber,
+  getDetectionStatusLabel,
+} from "@/utils/plateDisplay"
 
 type DetectionStatus = "detected" | "stored" | "monitoring" | "processing"
 
@@ -118,7 +122,7 @@ function DetectionCard({
                 text-white
               "
             >
-              {plate_number}
+              {formatPlateNumber(plate_number)}
             </h3>
 
             <div className="mt-2 flex items-center gap-3">
@@ -180,7 +184,7 @@ function DetectionCard({
           >
             <StatusIcon className="h-4 w-4" />
 
-            {normalizedStatus}
+            {getDetectionStatusLabel(status)}
           </div>
 
           {/* CONFIDENCE */}

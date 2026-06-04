@@ -12,7 +12,15 @@ import {
 import { useRef, useState } from "react"
 
 import { getVehicleClassLabel } from "@/constants/vehicleClasses"
-import { formatPlateNumber, formatPlateStatus, isUnknownPlate } from "@/utils/plateDisplay"
+import {
+  LOW_OCR_CONFIDENCE_MESSAGE,
+  formatPlateNumber,
+  formatPlateStatus,
+  getDetectionStatusLabel,
+  getOcrStatusLabel,
+  isLowOcrConfidence,
+  isUnknownPlate,
+} from "@/utils/plateDisplay"
 
 const API_URL = `${import.meta.env.VITE_API_URL ?? "http://localhost:8000"}/api/v1`
 
@@ -245,37 +253,68 @@ export default function DetectionUpload() {
         {/* RESULTS */}
         {debug && results.length === 0 && !isUploading && (
           <div className="mt-5 rounded-2xl border border-yellow-500/20 bg-yellow-500/10 p-4 text-sm font-semibold text-yellow-300">
-            Không phát hiện được biển số. Vui lòng thử ảnh rõ hơn hoặc ảnh nguyên xe.
+            No license plate was detected. Try a clearer image that includes the full vehicle.
           </div>
         )}
 
         {results.length > 0 && (
           <div className="mt-5 space-y-3">
             <h3 className="text-sm font-semibold text-zinc-400">Detection Results</h3>
-            {results.map((r, i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between rounded-2xl border border-white/10 bg-zinc-900/60 px-5 py-4"
-              >
-                <div>
-                  <p className="text-lg font-semibold text-white">
-                    {formatPlateNumber(r.plate_number)}
-                  </p>
-                  <p className="mt-1 text-sm text-zinc-400">
-                    {getVehicleClassLabel(r.vehicle_type)} • {r.confidence ?? 0}%
-                  </p>
-                  {isUnknownPlate(r.plate_number) && (
-                    <p className="mt-1 text-sm font-semibold text-yellow-300">
-                      {formatPlateStatus(r.plate_number)}
+            {results.map((r, i) => {
+              const lowConfidence = isLowOcrConfidence(
+                r.confidence,
+                r.plate_number,
+              )
+
+              return (
+                <div
+                  key={i}
+                  className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-zinc-900/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div>
+                    <p className="text-lg font-semibold text-white">
+                      {formatPlateNumber(r.plate_number)}
                     </p>
-                  )}
+                    <p className="mt-1 text-sm text-zinc-400">
+                      {getVehicleClassLabel(r.vehicle_type)} • OCR Confidence{" "}
+                      {r.confidence ?? 0}%
+                    </p>
+                    {isUnknownPlate(r.plate_number) && (
+                      <p className="mt-1 text-sm text-zinc-400">
+                        {formatPlateStatus(r.plate_number)}
+                      </p>
+                    )}
+                    {lowConfidence && (
+                      <p className="mt-2 text-sm font-semibold text-yellow-300">
+                        {LOW_OCR_CONFIDENCE_MESSAGE}
+                      </p>
+                    )}
+                  </div>
+                  <div
+                    className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 ${
+                      lowConfidence
+                        ? "border-yellow-500/20 bg-yellow-500/10"
+                        : "border-green-500/20 bg-green-500/10"
+                    }`}
+                  >
+                    <CheckCircle2
+                      className={`h-4 w-4 ${
+                        lowConfidence ? "text-yellow-300" : "text-green-400"
+                      }`}
+                    />
+                    <span
+                      className={`text-xs font-semibold ${
+                        lowConfidence ? "text-yellow-300" : "text-green-400"
+                      }`}
+                    >
+                      {lowConfidence
+                        ? getOcrStatusLabel(r.plate_number)
+                        : getDetectionStatusLabel(r.status)}
+                    </span>
+                  </div>
                 </div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1.5">
-                  <CheckCircle2 className="h-4 w-4 text-green-400" />
-                  <span className="text-xs font-semibold text-green-400">detected</span>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
 

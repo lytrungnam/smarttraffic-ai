@@ -11,20 +11,15 @@ import {
 
 import { useState } from "react"
 
+import { getVehicleClassLabel } from "@/constants/vehicleClasses"
 import type { DetectionItem } from "@/services/detectionService"
-import { formatPlateNumber, formatPlateStatus } from "@/utils/plateDisplay"
+import {
+  formatPlateNumber,
+  formatPlateStatus,
+  getDetectionStatusLabel,
+} from "@/utils/plateDisplay"
 
 import EvidencePreviewDialog from "./EvidencePreviewDialog"
-
-const normalizeStatus = (status?: string) => {
-  const value = status?.toLowerCase()
-
-  if (value === "stored" || value === "processing" || value === "monitoring") {
-    return value
-  }
-
-  return "detected"
-}
 
 const formatDetectionDate = (createdAt?: string) => {
   if (!createdAt) {
@@ -216,7 +211,7 @@ export default function HistoryCard({ records, isLoading }: HistoryCardProps) {
                         text-zinc-300
                       "
                       >
-                        {item.vehicle_type}
+                        {getVehicleClassLabel(item.vehicle_type)}
                       </span>
 
                       <span className="text-zinc-600">•</span>
@@ -261,7 +256,7 @@ export default function HistoryCard({ records, isLoading }: HistoryCardProps) {
                     font-semibold
                   "
                   >
-                    {normalizeStatus(item.status)}
+                    {getDetectionStatusLabel(item.status)}
                   </span>
                 </div>
               </div>

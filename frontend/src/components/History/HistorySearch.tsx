@@ -27,7 +27,7 @@ const vehicleTypes = [
     value: vehicleClass,
   })),
   {
-    label: "Unclassified",
+    label: "Unclassified Vehicle",
     value: "unclassified",
   },
 ]

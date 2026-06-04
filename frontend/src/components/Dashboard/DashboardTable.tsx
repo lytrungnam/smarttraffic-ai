@@ -5,7 +5,12 @@ import { Clock3, Eye, ShieldAlert } from "lucide-react"
 import { useState } from "react"
 
 import EvidencePreviewDialog from "@/components/History/EvidencePreviewDialog"
+import { getVehicleClassLabel } from "@/constants/vehicleClasses"
 import type { DetectionItem } from "@/services/detectionService"
+import {
+  formatPlateNumber,
+  getDetectionStatusLabel,
+} from "@/utils/plateDisplay"
 
 const formatDetectionTime = (createdAt?: string) => {
   if (!createdAt) {
@@ -251,7 +256,7 @@ export default function DashboardTable({
                           text-white
                         "
                           >
-                            {record.plate_number}
+                            {formatPlateNumber(record.plate_number)}
                           </h3>
 
                           <p
@@ -263,7 +268,7 @@ export default function DashboardTable({
                           text-zinc-500
                         "
                           >
-                            AI Recognized
+                            OCR Completed
                           </p>
                         </div>
                       </div>
@@ -279,7 +284,7 @@ export default function DashboardTable({
                       text-zinc-300
                     "
                       >
-                        {record.vehicle_type}
+                        {getVehicleClassLabel(record.vehicle_type)}
                       </span>
                     </td>
 
@@ -331,11 +336,7 @@ export default function DashboardTable({
                       bg-green-500/10 border-green-500/20 text-green-400
                     `}
                       >
-                        {record.status?.toLowerCase() === "processing"
-                          ? "processing"
-                          : record.status?.toLowerCase() === "stored"
-                            ? "stored"
-                            : "detected"}
+                        {getDetectionStatusLabel(record.status)}
                       </div>
                     </td>
 

@@ -5,7 +5,7 @@ export const isUnknownPlate = (plateNumber?: string | null) =>
 
 export const formatPlateNumber = (plateNumber?: string | null) => {
   if (isUnknownPlate(plateNumber)) {
-    return "Không đọc được biển số"
+    return "Unreadable Plate"
   }
 
   return plateNumber || "Unknown"
@@ -13,8 +13,37 @@ export const formatPlateNumber = (plateNumber?: string | null) => {
 
 export const formatPlateStatus = (plateNumber?: string | null) => {
   if (isUnknownPlate(plateNumber)) {
-    return "Phát hiện biển số nhưng OCR chưa đọc được ký tự."
+    return "A license plate region was detected, but OCR could not reliably read the characters."
   }
 
   return "OCR Recognized"
 }
+
+export const getDetectionStatusLabel = (status?: string | null) => {
+  const normalized = status?.toLowerCase()
+
+  if (normalized === "processing") return "Processing"
+  if (normalized === "stored") return "Stored"
+  if (normalized === "monitoring") return "Monitoring"
+
+  return "Detected"
+}
+
+export const getOcrStatusLabel = (plateNumber?: string | null) => {
+  if (isUnknownPlate(plateNumber)) {
+    return "Low OCR Confidence"
+  }
+
+  return "OCR Completed"
+}
+
+export const isLowOcrConfidence = (
+  confidence?: number | null,
+  plateNumber?: string | null,
+) => isUnknownPlate(plateNumber) || (confidence ?? 0) < 50
+
+export const LOW_OCR_CONFIDENCE_MESSAGE =
+  "OCR confidence is low. Try a clearer, brighter image with a less tilted plate."
+
+export const EVIDENCE_SAVED_LABEL = "Evidence Saved"
+export const EVIDENCE_SAVED_MESSAGE = "Evidence image has been saved."

@@ -13,6 +13,10 @@ import {
 import type { DetectionItem } from "@/services/detectionService"
 
 import { getEvidenceImageUrl } from "@/services/detectionService"
+import {
+  EVIDENCE_SAVED_MESSAGE,
+  formatPlateNumber,
+} from "@/utils/plateDisplay"
 
 type EvidencePreviewDialogProps = {
   detection: DetectionItem | null
@@ -138,7 +142,7 @@ export default function EvidencePreviewDialog({
                   text-zinc-400
                 "
               >
-                {detection?.plate_number ?? "No plate selected"}
+                {formatPlateNumber(detection?.plate_number)}
               </DialogDescription>
             </div>
           </div>
@@ -217,7 +221,7 @@ export default function EvidencePreviewDialog({
 
                 <img
                   src={imageUrl}
-                  alt={`Evidence for ${detection?.plate_number ?? "detection"}`}
+                  alt={`Evidence for ${formatPlateNumber(detection?.plate_number)}`}
                   className="
                     max-h-[70vh]
                     w-full
@@ -298,14 +302,12 @@ export default function EvidencePreviewDialog({
               className="
                 mt-4
 
-                break-all
-
                 text-xs
                 font-semibold
                 text-zinc-500
               "
             >
-              {imageUrl}
+              {EVIDENCE_SAVED_MESSAGE}
             </p>
           )}
         </div>
