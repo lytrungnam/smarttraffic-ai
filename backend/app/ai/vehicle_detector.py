@@ -1,14 +1,21 @@
-from ultralytics import YOLO
+_model = None
 
 
-model = YOLO(
-    "app/ai/weights/vehicle_best.pt"
-)
+def _get_model():
+    global _model
+    if _model is None:
+        print("[AI] Loading YOLO vehicle model")
+        from ultralytics import YOLO
+
+        _model = YOLO(
+            "app/ai/weights/vehicle_best.pt"
+        )
+    return _model
 
 
 def detect_vehicles(frame):
 
-    results = model(
+    results = _get_model()(
         frame,
         verbose=False,
     )

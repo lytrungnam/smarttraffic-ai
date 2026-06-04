@@ -1,14 +1,21 @@
-from ultralytics import YOLO
+_plate_model = None
 
 
-plate_model = YOLO(
-    "app/ai/weights/plate_best.pt"
-)
+def _get_plate_model():
+    global _plate_model
+    if _plate_model is None:
+        print("[AI] Loading YOLO plate model")
+        from ultralytics import YOLO
+
+        _plate_model = YOLO(
+            "app/ai/weights/plate_best.pt"
+        )
+    return _plate_model
 
 
 def detect_plate(frame):
 
-    results = plate_model(
+    results = _get_plate_model()(
         frame,
         verbose=False,
     )

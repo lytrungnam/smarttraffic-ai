@@ -113,6 +113,7 @@ class Settings(BaseSettings):
     PRICE_5_CAMERAS_MATIC: float = 4.0
     ACCEPTED_CHAIN_ID: int = 137
     FREE_DAILY_LIMIT_MINUTES: int = 120
+    ENABLE_AI_STARTUP: bool = False
 
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":

@@ -17,10 +17,6 @@ from app.core.config import settings
 
 from app.core.db import engine, init_db
 
-from app.services.detection_engine import (
-    real_ai_detection_loop,
-)
-
 
 def custom_generate_unique_id(
     route: APIRoute,
@@ -89,9 +85,17 @@ async def _background_init_db() -> None:
 
 @app.on_event("startup")
 async def startup_event():
+    print("[STARTUP] Health endpoints ready: /health and /railway-health")
     # Fire-and-forget: never block startup
     asyncio.create_task(_background_init_db())
-    asyncio.create_task(real_ai_detection_loop())
+
+    if settings.ENABLE_AI_STARTUP:
+        print("[STARTUP] ENABLE_AI_STARTUP=true; starting realtime AI loop")
+        from app.services.detection_engine import real_ai_detection_loop
+
+        asyncio.create_task(real_ai_detection_loop())
+    else:
+        print("[STARTUP] ENABLE_AI_STARTUP=false; realtime AI loop disabled")
 
 
 # =========================
@@ -116,6 +120,11 @@ app.add_middleware(
 # =========================
 @app.get("/health", tags=["utils"])
 def health():
+    return {"status": "ok"}
+
+
+@app.get("/railway-health", tags=["utils"])
+def railway_health():
     return {"status": "ok"}
 
 

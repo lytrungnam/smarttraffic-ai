@@ -1,16 +1,25 @@
 import cv2
 import re
-import easyocr
 
 # =====================================
 # EASY OCR
 # =====================================
 
-reader = easyocr.Reader(
-    ["en"],
-    gpu=False,
-    model_storage_directory="/app/.EasyOCR",
-)
+_reader = None
+
+
+def _get_reader():
+    global _reader
+    if _reader is None:
+        print("[AI] Loading EasyOCR reader")
+        import easyocr
+
+        _reader = easyocr.Reader(
+            ["en"],
+            gpu=False,
+            model_storage_directory="/app/.EasyOCR",
+        )
+    return _reader
 
 # =====================================
 # VIETNAM PROVINCE CODES
@@ -192,7 +201,7 @@ def read_plate_text(plate_image):
         )
 
         # OCR
-        results = reader.readtext(
+        results = _get_reader().readtext(
             thresh
         )
 
