@@ -1,21 +1,19 @@
 import asyncio
-import sentry_sdk
+import logging
 
+import sentry_sdk
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from fastapi.staticfiles import StaticFiles
-
 from starlette.middleware.cors import (
     CORSMiddleware,
 )
 
-from sqlmodel import SQLModel
-
 from app.api.main import api_router
-
 from app.core.config import settings
-
 from app.core.db import engine, init_db
+
+logger = logging.getLogger(__name__)
 
 
 def custom_generate_unique_id(
@@ -90,6 +88,13 @@ async def startup_event():
     asyncio.create_task(_background_init_db())
 
     if settings.ENABLE_AI_STARTUP:
+        if not settings.CAMERA_SOURCE:
+            logger.warning(
+                "[STARTUP] ENABLE_AI_STARTUP=true but CAMERA_SOURCE is not set; "
+                "realtime AI loop disabled"
+            )
+            return
+
         print("[STARTUP] ENABLE_AI_STARTUP=true; starting realtime AI loop")
         from app.services.detection_engine import real_ai_detection_loop
 

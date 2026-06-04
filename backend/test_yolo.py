@@ -1,25 +1,38 @@
-import cv2
+import os
 import time
 
-from app.ai.vehicle_detector import (
-    detect_vehicles,
-)
-
-from app.ai.plate_detector import (
-    detect_plate,
-)
+import cv2
 
 from app.ai.ocr_reader import (
     read_plate_text,
 )
-
-# webcam
-# cap = cv2.VideoCapture(0)
-
-# video file
-cap = cv2.VideoCapture(
-    "video.mp4"
+from app.ai.plate_detector import (
+    detect_plate,
 )
+from app.ai.vehicle_detector import (
+    detect_vehicles,
+)
+
+
+def _opencv_capture_source(source: str) -> int | str:
+    stripped_source = source.strip()
+    if stripped_source.isdigit():
+        return int(stripped_source)
+    return stripped_source
+
+
+camera_source = os.getenv("CAMERA_SOURCE")
+if not camera_source:
+    raise SystemExit(
+        "CAMERA_SOURCE is required. Examples: CAMERA_SOURCE=0 for webcam, "
+        "CAMERA_SOURCE=rtsp://... for IP camera, or CAMERA_SOURCE=sample.mp4."
+    )
+
+cap = cv2.VideoCapture(
+    _opencv_capture_source(camera_source)
+)
+if not cap.isOpened():
+    raise SystemExit(f"Unable to open CAMERA_SOURCE={camera_source!r}")
 
 # save unique plates only
 saved_plates = set()

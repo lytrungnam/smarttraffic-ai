@@ -50,6 +50,10 @@ docker compose watch
 
 ### Backend — dùng uv
 
+docker network create traefik-public
+
+docker compose -f compose.yml up backend
+
 ```bash
 # Cài uv nếu chưa có (Windows)
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
@@ -152,6 +156,12 @@ SENTRY_DSN=
 # =========================================================
 DOCKER_IMAGE_BACKEND=backend
 DOCKER_IMAGE_FRONTEND=frontend
+
+# =========================================================
+# REALTIME AI CAMERA (tuỳ chọn)
+# =========================================================
+ENABLE_AI_STARTUP=False                 # True để backend tự chạy realtime loop
+CAMERA_SOURCE=                          # 0, RTSP/HTTP camera URL, hoặc path video demo
 ```
 
 > 🔐 **Bảo mật:** Không commit file `.env` lên Git — đã có trong `.gitignore`.
@@ -163,7 +173,7 @@ DOCKER_IMAGE_FRONTEND=frontend
 ### AI Detection Pipeline
 
 ```
-video.mp4 (looped) → OpenCV frame → resize 960×540 → mỗi 3 frame:
+CAMERA_SOURCE → OpenCV frame → resize 960×540 → mỗi 3 frame:
   → vehicle_detector.py  (YOLOv5, weights/vehicle_best.pt)
   → plate_detector.py    (YOLOv5, weights/plate_best.pt)
   → ocr_reader.py        (EasyOCR trên vùng crop biển số)
@@ -172,7 +182,30 @@ video.mp4 (looped) → OpenCV frame → resize 960×540 → mỗi 3 frame:
   → broadcast JSON đến tất cả WebSocket clients
 ```
 
-Vòng lặp chính chạy như `asyncio` task khi backend khởi động (`detection_engine.py:real_ai_detection_loop`). Set `saved_plates` là in-memory dedup guard — reset khi restart.
+Vòng lặp realtime chỉ chạy khi `ENABLE_AI_STARTUP=True`. Nguồn camera lấy từ `CAMERA_SOURCE`:
+
+- Webcam local: `CAMERA_SOURCE=0`
+- Camera IP/RTSP: `CAMERA_SOURCE=rtsp://user:pass@host:554/stream`
+- Camera HTTP: `CAMERA_SOURCE=http://host/video`
+- Demo local: `CAMERA_SOURCE=backend/demo/sample.mp4`
+
+Nếu `ENABLE_AI_STARTUP=True` nhưng thiếu `CAMERA_SOURCE`, backend log warning và không start realtime loop. Upload detection endpoint vẫn hoạt động độc lập với realtime loop. Set `saved_plates` là in-memory dedup guard — reset khi restart.
+
+Railway realtime env tối thiểu:
+
+```env
+ENVIRONMENT=production
+ENABLE_AI_STARTUP=True
+CAMERA_SOURCE=rtsp://user:pass@host:554/stream
+```
+
+Local demo env tối thiểu:
+
+```env
+ENVIRONMENT=local
+ENABLE_AI_STARTUP=True
+CAMERA_SOURCE=0
+```
 
 ### Cấu trúc Backend
 
@@ -378,3 +411,11 @@ docker compose down        # dừng tất cả container
 - **GitHub:** https://github.com/lytrungnam/smarttraffic-ai
 - **Thành viên:** Nguyễn Tấn Mỹ, Lý Trung Nam
 - **Tài khoản admin mặc định:** `admin@alpr.com` / `12345678`
+
+Terminal 1 — backend:
+  cd "C:\Users\HP VICTUS\Downloads\smarttraffic-ai\smarttraffic-ai\backend"
+  uv run fastapi dev app/main.py
+
+  Terminal 2 — ngrok (mở CMD mới):
+  py "C:\Users\HP VICTUS\Downloads\smarttraffic-ai\smarttraffic-ai\ngrok_start.py"
+

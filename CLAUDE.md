@@ -109,7 +109,7 @@ Hooks cover: ruff check + format, mypy, ty, biome (frontend), YAML/TOML validati
 The core loop runs at backend startup as an `asyncio` task (`detection_engine.py:real_ai_detection_loop`):
 
 ```
-video.mp4 (looped) → OpenCV frame → resize 960×540 → every 3rd frame:
+CAMERA_SOURCE → OpenCV frame → resize 960×540 → every 3rd frame:
   → vehicle_detector.py  (YOLOv5, weights/vehicle_best.pt)
   → plate_detector.py    (YOLOv5, weights/plate_best.pt)
   → ocr_reader.py        (EasyOCR on cropped plate region)
@@ -118,7 +118,9 @@ video.mp4 (looped) → OpenCV frame → resize 960×540 → every 3rd frame:
   → broadcast JSON to all WebSocket clients via ConnectionManager
 ```
 
-The `saved_plates` set in `detection_engine.py` is an in-memory dedup guard — it resets on restart.
+Realtime startup is disabled by default. It only starts when `ENABLE_AI_STARTUP=True` and `CAMERA_SOURCE` is set. `CAMERA_SOURCE` is passed to OpenCV `VideoCapture`; numeric strings such as `0` are converted to webcam indexes, while RTSP URLs, HTTP camera URLs, and local video file paths remain strings. If startup is enabled without a camera source, the backend logs a warning and continues without the realtime loop.
+
+The `saved_plates` set in `detection_engine.py` is an in-memory dedup guard — it resets on restart. Upload detection endpoints do not depend on `CAMERA_SOURCE`.
 
 ### Backend Structure
 
@@ -156,3 +158,12 @@ FIRST_SUPERUSER, FIRST_SUPERUSER_PASSWORD
 ```
 
 `ENVIRONMENT` must be `local`, `staging`, or `production`. The `private` API router is only mounted in `local`.
+
+Realtime AI variables:
+
+```
+ENABLE_AI_STARTUP=True
+CAMERA_SOURCE=0
+```
+
+For Railway production, use `ENVIRONMENT=production`, `ENABLE_AI_STARTUP=True`, and an externally reachable RTSP/HTTP camera URL in `CAMERA_SOURCE`.

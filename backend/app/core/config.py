@@ -114,6 +114,7 @@ class Settings(BaseSettings):
     ACCEPTED_CHAIN_ID: int = 137
     FREE_DAILY_LIMIT_MINUTES: int = 120
     ENABLE_AI_STARTUP: bool = False
+    CAMERA_SOURCE: str | None = None
 
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":
