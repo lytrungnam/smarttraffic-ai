@@ -13,10 +13,10 @@ export const formatPlateNumber = (plateNumber?: string | null) => {
 
 export const formatPlateStatus = (plateNumber?: string | null) => {
   if (isUnknownPlate(plateNumber)) {
-    return "A license plate region was detected, but OCR could not reliably read the characters."
+    return "Plate region detected, OCR unreadable"
   }
 
-  return "OCR Recognized"
+  return "Detected"
 }
 
 export const getDetectionStatusLabel = (status?: string | null) => {
@@ -34,7 +34,17 @@ export const getOcrStatusLabel = (plateNumber?: string | null) => {
     return "Low OCR Confidence"
   }
 
-  return "OCR Completed"
+  return "Detected"
+}
+
+export const getRealCameraName = (location?: string | null) => {
+  const cameraName = location?.trim()
+
+  if (!cameraName || cameraName.toLowerCase() === "smart camera") {
+    return null
+  }
+
+  return cameraName
 }
 
 export const isLowOcrConfidence = (

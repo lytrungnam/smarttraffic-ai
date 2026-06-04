@@ -13,7 +13,10 @@ import type {
 import { getLatestDetections } from "@/services/detectionService"
 import {
   formatPlateNumber,
+  getRealCameraName,
   getDetectionStatusLabel,
+  isUnknownPlate,
+  formatPlateStatus,
 } from "@/utils/plateDisplay"
 
 const isDetectionItem = (value: unknown): value is DetectionItem => {
@@ -120,14 +123,18 @@ export default function DetectionRealtime() {
         )}
 
         {!isLoading &&
-          realtimeFeed.map((item) => (
-            <div
-              key={item.id ?? `${item.plate_number}-${item.created_at}`}
-              className="group relative overflow-hidden rounded-3xl border border-white/10 bg-zinc-900/60 p-5 transition-all duration-300 hover:border-cyan-500/20"
-            >
-              <div className="absolute right-0 top-0 h-32 w-32 bg-cyan-500/5 blur-3xl" />
+          realtimeFeed.map((item) => {
+            const cameraName = getRealCameraName(item.location)
+            const plateUnreadable = isUnknownPlate(item.plate_number)
 
-              <div className="relative flex flex-col gap-8 xl:flex-row xl:items-center xl:justify-between">
+            return (
+              <div
+                key={item.id ?? `${item.plate_number}-${item.created_at}`}
+                className="group relative overflow-hidden rounded-3xl border border-white/10 bg-zinc-900/60 p-5 transition-all duration-300 hover:border-cyan-500/20"
+              >
+                <div className="absolute right-0 top-0 h-32 w-32 bg-cyan-500/5 blur-3xl" />
+
+                <div className="relative flex flex-col gap-8 xl:flex-row xl:items-center xl:justify-between">
                 <div className="flex-1">
                   <div className="flex items-start gap-4">
                     <div className="rounded-2xl border border-white/10 bg-cyan-500/10 p-4">
@@ -136,17 +143,25 @@ export default function DetectionRealtime() {
 
                     <div className="min-w-0">
                       <h3 className="text-xl font-semibold tracking-tight text-white">
-                        {formatPlateNumber(item.plate_number)}
+                        Plate Number: {formatPlateNumber(item.plate_number)}
                       </h3>
+
+                      {plateUnreadable && (
+                        <p className="mt-2 text-sm text-zinc-400">
+                          {formatPlateStatus(item.plate_number)}
+                        </p>
+                      )}
 
                       <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
                         <span className="font-semibold text-zinc-300">
-                          {getVehicleClassLabel(item.vehicle_type)}
+                          Vehicle Type: {getVehicleClassLabel(item.vehicle_type)}
                         </span>
-                        <span className="text-zinc-600">•</span>
-                        <span className="text-zinc-400">
-                          {item.location || "Smart Camera"}
-                        </span>
+                        {cameraName && (
+                          <>
+                            <span className="text-zinc-600">•</span>
+                            <span className="text-zinc-400">{cameraName}</span>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -154,7 +169,7 @@ export default function DetectionRealtime() {
                   <div className="mt-6">
                     <div className="mb-3 flex items-center justify-between gap-4">
                       <span className="text-xs font-semibold text-zinc-400">
-                        Detection Confidence
+                        OCR Confidence
                       </span>
                       <span className="text-sm font-semibold text-cyan-400">
                         {item.confidence ?? 0}%
@@ -180,7 +195,7 @@ export default function DetectionRealtime() {
 
                   <div className="inline-flex items-center gap-2 rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1.5 text-green-400">
                     <span className="text-xs font-semibold">
-                      {getDetectionStatusLabel(item.status)}
+                      Status: {getDetectionStatusLabel(item.status)}
                     </span>
                   </div>
 
@@ -191,15 +206,16 @@ export default function DetectionRealtime() {
                     </span>
                   </div>
                 </div>
-              </div>
+                </div>
 
-              <div className="mt-6">
-                <div className="h-[3px] w-full overflow-hidden rounded-full bg-zinc-800">
-                  <div className="h-full w-full animate-pulse bg-gradient-to-r from-cyan-500 via-blue-500 to-cyan-500" />
+                <div className="mt-6">
+                  <div className="h-[3px] w-full overflow-hidden rounded-full bg-zinc-800">
+                    <div className="h-full w-full animate-pulse bg-gradient-to-r from-cyan-500 via-blue-500 to-cyan-500" />
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
       </div>
     </div>
   )

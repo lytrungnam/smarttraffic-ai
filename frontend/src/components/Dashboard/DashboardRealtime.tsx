@@ -3,8 +3,11 @@ import { Activity, Car, Clock3, Wifi } from "lucide-react"
 import { getVehicleClassLabel } from "@/constants/vehicleClasses"
 import type { DetectionItem } from "@/services/detectionService"
 import {
+  formatPlateStatus,
   formatPlateNumber,
   getDetectionStatusLabel,
+  getRealCameraName,
+  isUnknownPlate,
 } from "@/utils/plateDisplay"
 
 type DetectionStatus = "detected" | "stored" | "monitoring" | "processing"
@@ -51,12 +54,14 @@ const isDetectionStatus = (
 function DetectionCard({
   plate_number,
   vehicle_type = "unclassified",
-  location = "Smart Camera",
+  location,
   created_at = "Realtime",
   confidence = 0,
   status = "detected",
 }: DetectionCardProps) {
   const normalizedStatus = status.toLowerCase()
+  const cameraName = getRealCameraName(location)
+  const plateUnreadable = isUnknownPlate(plate_number)
 
   const statusConfig =
     statusStyles[
@@ -122,10 +127,16 @@ function DetectionCard({
                 text-white
               "
             >
-              {formatPlateNumber(plate_number)}
+              Plate Number: {formatPlateNumber(plate_number)}
             </h3>
 
-            <div className="mt-2 flex items-center gap-3">
+            {plateUnreadable && (
+              <p className="mt-2 text-sm text-zinc-400">
+                {formatPlateStatus(plate_number)}
+              </p>
+            )}
+
+            <div className="mt-2 flex flex-wrap items-center gap-3">
               <span
                 className="
                   text-sm
@@ -134,21 +145,25 @@ function DetectionCard({
                   text-zinc-300
                 "
               >
-                {getVehicleClassLabel(vehicle_type)}
+                Vehicle Type: {getVehicleClassLabel(vehicle_type)}
               </span>
 
-              <span className="text-zinc-600">•</span>
+              {cameraName && (
+                <>
+                  <span className="text-zinc-600">•</span>
 
-              <span
-                className="
+                  <span
+                    className="
                   text-sm
                   font-medium
                   tracking-wide
                   text-zinc-500
                 "
-              >
-                {location}
-              </span>
+                  >
+                    {cameraName}
+                  </span>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -195,7 +210,7 @@ function DetectionCard({
               text-cyan-400
             "
           >
-            Confidence: {confidence}%
+            OCR Confidence: {confidence}%
           </p>
         </div>
       </div>

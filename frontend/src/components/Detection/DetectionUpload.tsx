@@ -303,10 +303,13 @@ export default function DetectionUpload() {
                 >
                   <div>
                     <p className="text-lg font-semibold text-white">
-                      {formatPlateNumber(r.plate_number)}
+                      Plate Number: {formatPlateNumber(r.plate_number)}
                     </p>
                     <p className="mt-1 text-sm text-zinc-400">
-                      {getVehicleClassLabel(r.vehicle_type)} • OCR Confidence{" "}
+                      Vehicle Type: {getVehicleClassLabel(r.vehicle_type)}
+                    </p>
+                    <p className="mt-1 text-sm text-zinc-400">
+                      OCR Confidence:{" "}
                       {r.confidence ?? 0}%
                     </p>
                     {isUnknownPlate(r.plate_number) && (
@@ -314,6 +317,9 @@ export default function DetectionUpload() {
                         {formatPlateStatus(r.plate_number)}
                       </p>
                     )}
+                    <p className="mt-1 text-sm text-zinc-400">
+                      Status: {getDetectionStatusLabel(r.status)}
+                    </p>
                     {lowConfidence && (
                       <p className="mt-2 text-sm font-semibold text-yellow-300">
                         {LOW_OCR_CONFIDENCE_MESSAGE}

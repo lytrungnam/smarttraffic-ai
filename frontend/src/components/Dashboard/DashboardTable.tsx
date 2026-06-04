@@ -8,8 +8,11 @@ import EvidencePreviewDialog from "@/components/History/EvidencePreviewDialog"
 import { getVehicleClassLabel } from "@/constants/vehicleClasses"
 import type { DetectionItem } from "@/services/detectionService"
 import {
+  formatPlateStatus,
   formatPlateNumber,
   getDetectionStatusLabel,
+  getRealCameraName,
+  isUnknownPlate,
 } from "@/utils/plateDisplay"
 
 const formatDetectionTime = (createdAt?: string) => {
@@ -224,9 +227,13 @@ export default function DashboardTable({
               )}
 
               {!isLoading &&
-                records.map((record) => (
-                  <tr
-                    key={record.id ?? record.plate_number}
+                records.map((record) => {
+                  const cameraName = getRealCameraName(record.location)
+                  const plateUnreadable = isUnknownPlate(record.plate_number)
+
+                  return (
+                    <tr
+                      key={record.id ?? record.plate_number}
                     className="
                   border-b border-white/5
                   transition-all
@@ -259,17 +266,19 @@ export default function DashboardTable({
                             {formatPlateNumber(record.plate_number)}
                           </h3>
 
-                          <p
-                            className="
+                          {plateUnreadable && (
+                            <p
+                              className="
                           mt-1
                           text-sm
                           font-medium
                           tracking-wide
                           text-zinc-500
                         "
-                          >
-                            OCR Completed
-                          </p>
+                            >
+                              {formatPlateStatus(record.plate_number)}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -298,7 +307,7 @@ export default function DashboardTable({
                       text-zinc-400
                     "
                       >
-                        {record.location}
+                        {cameraName ?? ""}
                       </span>
                     </td>
 
@@ -372,7 +381,8 @@ export default function DashboardTable({
                       </button>
                     </td>
                   </tr>
-                ))}
+                  )
+                })}
             </tbody>
           </table>
         </div>

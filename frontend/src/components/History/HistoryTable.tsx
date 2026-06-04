@@ -9,7 +9,9 @@ import type { DetectionItem } from "@/services/detectionService"
 import {
   formatPlateNumber,
   formatPlateStatus,
+  getRealCameraName,
   getDetectionStatusLabel,
+  isUnknownPlate,
 } from "@/utils/plateDisplay"
 
 import EvidencePreviewDialog from "./EvidencePreviewDialog"
@@ -386,9 +388,13 @@ export default function HistoryTable({
 
               {!isLoading &&
                 !error &&
-                records.map((item) => (
-                  <tr
-                    key={item.id ?? item.plate_number}
+                records.map((item) => {
+                  const cameraName = getRealCameraName(item.location)
+                  const plateUnreadable = isUnknownPlate(item.plate_number)
+
+                  return (
+                    <tr
+                      key={item.id ?? item.plate_number}
                     className="
                   border-b border-white/5
 
@@ -434,8 +440,9 @@ export default function HistoryTable({
                             {formatPlateNumber(item.plate_number)}
                           </h3>
 
-                          <p
-                            className="
+                          {plateUnreadable && (
+                            <p
+                              className="
                           mt-1
 
                           text-xs
@@ -443,9 +450,10 @@ export default function HistoryTable({
 
                           text-zinc-500
                         "
-                          >
-                            {formatPlateStatus(item.plate_number)}
-                          </p>
+                            >
+                              {formatPlateStatus(item.plate_number)}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -491,7 +499,7 @@ export default function HistoryTable({
                       >
                         <MapPin className="h-4 w-4" />
 
-                        <span>{item.location}</span>
+                        <span>{cameraName ?? ""}</span>
                       </div>
                     </td>
 
@@ -595,12 +603,13 @@ export default function HistoryTable({
                         ${item.image_path ? "text-cyan-400" : "text-zinc-500"}
                       `}
                         >
-                          View Full Evidence
+                          View Evidence
                         </span>
                       </button>
                     </td>
                   </tr>
-                ))}
+                  )
+                })}
             </tbody>
           </table>
         </div>

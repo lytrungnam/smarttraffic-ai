@@ -20,9 +20,10 @@ import {
   LOW_OCR_CONFIDENCE_MESSAGE,
   formatPlateNumber,
   formatPlateStatus,
+  getRealCameraName,
   getDetectionStatusLabel,
-  getOcrStatusLabel,
   isLowOcrConfidence,
+  isUnknownPlate,
 } from "@/utils/plateDisplay"
 
 const formatDetectionTime = (createdAt?: string) => {
@@ -174,6 +175,8 @@ export default function DetectionResult() {
                 item.confidence,
                 item.plate_number,
               )
+              const cameraName = getRealCameraName(item.location)
+              const plateUnreadable = isUnknownPlate(item.plate_number)
 
               return (
                 <div
@@ -199,25 +202,30 @@ export default function DetectionResult() {
 
                         <div>
                           <h3 className="text-2xl font-semibold tracking-tight text-white">
-                            {formatPlateNumber(item.plate_number)}
+                            Plate Number: {formatPlateNumber(item.plate_number)}
                           </h3>
 
-                          <p className="mt-2 max-w-xl text-sm text-zinc-400">
-                            {formatPlateStatus(item.plate_number)}
+                          {plateUnreadable && (
+                            <p className="mt-2 max-w-xl text-sm text-zinc-400">
+                              {formatPlateStatus(item.plate_number)}
+                            </p>
+                          )}
+
+                          <p className="mt-2 text-sm font-semibold text-zinc-300">
+                            Vehicle Type:{" "}
+                            {getVehicleClassLabel(item.vehicle_type)}
                           </p>
 
-                          <div className="mt-3 flex flex-wrap items-center gap-3">
-                            <span className="text-sm font-semibold text-zinc-300">
-                              {getVehicleClassLabel(item.vehicle_type)}
-                            </span>
-
-                            <span className="text-zinc-600">•</span>
-
-                            <div className="flex items-center gap-2 text-sm text-zinc-400">
+                          {cameraName && (
+                            <div className="mt-3 flex items-center gap-2 text-sm text-zinc-400">
                               <MapPin className="h-4 w-4" />
-                              <span>{item.location || "Smart Camera"}</span>
+                              <span>{cameraName}</span>
                             </div>
-                          </div>
+                          )}
+
+                          <p className="mt-3 text-sm font-semibold text-zinc-300">
+                            Status: {getDetectionStatusLabel(item.status)}
+                          </p>
                         </div>
                       </div>
 
@@ -236,9 +244,7 @@ export default function DetectionResult() {
                       >
                         <ShieldAlert className="h-4 w-4" />
                         <span className="text-xs font-semibold">
-                          {lowConfidence
-                            ? getOcrStatusLabel(item.plate_number)
-                            : getDetectionStatusLabel(item.status)}
+                          {getDetectionStatusLabel(item.status)}
                         </span>
                       </div>
                     </div>
@@ -297,10 +303,6 @@ export default function DetectionResult() {
                         <h2 className="text-lg font-semibold tracking-tight text-white">
                           {formatDetectionTime(item.created_at)}
                         </h2>
-
-                        <p className="mt-3 text-sm text-zinc-400">
-                          Stored monitoring event
-                        </p>
                       </div>
 
                     </div>
