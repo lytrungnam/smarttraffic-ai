@@ -1,5 +1,6 @@
 import asyncio
 import time
+from pathlib import Path
 
 from fastapi import APIRouter, File, HTTPException, Query, UploadFile
 from fastapi.responses import StreamingResponse
@@ -52,14 +53,21 @@ async def upload_detection(
 
     saved = []
 
-    for result in results:
+    storage_dir = Path("storage/detections")
+    storage_dir.mkdir(parents=True, exist_ok=True)
+
+    for index, result in enumerate(results):
         plate_text = result.get("plate_number", "UNKNOWN")
 
         if not plate_text or plate_text == "UNKNOWN":
             continue
 
         timestamp = int(time.time())
-        image_path = f"storage/detections/{plate_text}_{timestamp}_upload.jpg"
+        safe_plate_text = "".join(
+            char if char.isalnum() else "_"
+            for char in plate_text
+        )
+        image_path = storage_dir / f"{safe_plate_text}_{timestamp}_{index}_upload.jpg"
 
         with open(image_path, "wb") as f:
             f.write(contents)
@@ -68,7 +76,7 @@ async def upload_detection(
             plate_number=plate_text,
             vehicle_type=result.get("vehicle_type", "unclassified"),
             confidence=float(result.get("confidence", 0)),
-            image_path=image_path,
+            image_path=str(image_path),
             status="detected",
         )
 

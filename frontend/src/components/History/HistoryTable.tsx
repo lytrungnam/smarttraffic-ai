@@ -5,6 +5,7 @@ import { CalendarDays, Clock3, Eye, MapPin, ShieldAlert } from "lucide-react"
 import { useState } from "react"
 
 import type { DetectionItem } from "@/services/detectionService"
+import { formatPlateNumber, formatPlateStatus } from "@/utils/plateDisplay"
 
 import EvidencePreviewDialog from "./EvidencePreviewDialog"
 
@@ -420,7 +421,7 @@ export default function HistoryTable({
                           text-white
                         "
                           >
-                            {item.plate_number}
+                            {formatPlateNumber(item.plate_number)}
                           </h3>
 
                           <p
@@ -433,7 +434,7 @@ export default function HistoryTable({
                           text-zinc-500
                         "
                           >
-                            OCR Recognized
+                            {formatPlateStatus(item.plate_number)}
                           </p>
                         </div>
                       </div>

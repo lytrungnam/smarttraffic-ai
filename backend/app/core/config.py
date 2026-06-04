@@ -111,6 +111,7 @@ class Settings(BaseSettings):
     CAMERA_SOURCE: str | None = None
     VEHICLE_CONFIDENCE_THRESHOLD: float = 0.25
     PLATE_CONFIDENCE_THRESHOLD: float = 0.25
+    DEBUG_SAVE_PLATE_CROPS: bool = False
 
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":

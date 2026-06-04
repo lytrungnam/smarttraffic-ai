@@ -12,6 +12,7 @@ import {
 import { useState } from "react"
 
 import type { DetectionItem } from "@/services/detectionService"
+import { formatPlateNumber, formatPlateStatus } from "@/utils/plateDisplay"
 
 import EvidencePreviewDialog from "./EvidencePreviewDialog"
 
@@ -195,7 +196,7 @@ export default function HistoryCard({ records, isLoading }: HistoryCardProps) {
                       text-white
                     "
                     >
-                      {item.plate_number}
+                      {formatPlateNumber(item.plate_number)}
                     </h2>
 
                     <div
@@ -447,7 +448,7 @@ export default function HistoryCard({ records, isLoading }: HistoryCardProps) {
                     text-zinc-400
                   "
                   >
-                    Event stored in database
+                    {formatPlateStatus(item.plate_number)}
                   </p>
                 </div>
               </div>

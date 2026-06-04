@@ -12,6 +12,7 @@ import {
 import { useRef, useState } from "react"
 
 import { getVehicleClassLabel } from "@/constants/vehicleClasses"
+import { formatPlateNumber, formatPlateStatus, isUnknownPlate } from "@/utils/plateDisplay"
 
 const API_URL = `${import.meta.env.VITE_API_URL ?? "http://localhost:8000"}/api/v1`
 
@@ -257,10 +258,17 @@ export default function DetectionUpload() {
                 className="flex items-center justify-between rounded-2xl border border-white/10 bg-zinc-900/60 px-5 py-4"
               >
                 <div>
-                  <p className="text-lg font-semibold text-white">{r.plate_number}</p>
+                  <p className="text-lg font-semibold text-white">
+                    {formatPlateNumber(r.plate_number)}
+                  </p>
                   <p className="mt-1 text-sm text-zinc-400">
                     {getVehicleClassLabel(r.vehicle_type)} • {r.confidence ?? 0}%
                   </p>
+                  {isUnknownPlate(r.plate_number) && (
+                    <p className="mt-1 text-sm font-semibold text-yellow-300">
+                      {formatPlateStatus(r.plate_number)}
+                    </p>
+                  )}
                 </div>
                 <div className="inline-flex items-center gap-2 rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1.5">
                   <CheckCircle2 className="h-4 w-4 text-green-400" />
