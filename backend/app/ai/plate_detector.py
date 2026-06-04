@@ -5,6 +5,12 @@ from app.core.config import settings
 
 _plate_model = None
 logger = logging.getLogger(__name__)
+PLATE_CLASS_ALIASES = {
+    "license_plate": "plate",
+    "licence_plate": "plate",
+    "number_plate": "plate",
+    "lp": "plate",
+}
 
 
 def get_plate_model_path() -> Path:
@@ -22,12 +28,34 @@ def _get_plate_model():
 
         logger.info("[AI] Loading YOLO plate model")
         logger.info("[AI] Plate weights: %s", model_path)
+        import ultralytics
         from ultralytics import YOLO
 
+        logger.info("[AI] Ultralytics version: %s", ultralytics.__version__)
         _plate_model = YOLO(
             str(model_path)
         )
+        names = _get_model_names(_plate_model)
+        logger.info("[AI] Plate model classes: %s", names)
+        if not any("plate" in name for name in names.values()):
+            logger.warning(
+                "[AI] Plate model class names do not include an explicit plate class: %s",
+                names,
+            )
     return _plate_model
+
+
+def _get_model_names(model) -> dict[int, str]:
+    raw_names = getattr(model, "names", {}) or {}
+    return {
+        int(class_id): _normalize_plate_label(label)
+        for class_id, label in raw_names.items()
+    }
+
+
+def _normalize_plate_label(label: str) -> str:
+    normalized = str(label).strip().lower().replace(" ", "_")
+    return PLATE_CLASS_ALIASES.get(normalized, normalized)
 
 
 def detect_plate(frame):
@@ -56,7 +84,16 @@ def detect_plate(frame):
                 box.xyxy[0]
             )
 
+            cls = int(box.cls[0]) if box.cls is not None else 0
+            label = _normalize_plate_label(
+                result.names.get(cls, str(cls))
+                if isinstance(result.names, dict)
+                else result.names[cls]
+            )
+
             plates.append({
+
+                "label": label,
 
                 "box": [
                     x1,
