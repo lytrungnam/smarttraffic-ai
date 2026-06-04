@@ -13,10 +13,7 @@ import {
 import type { DetectionItem } from "@/services/detectionService"
 
 import { getEvidenceImageUrl } from "@/services/detectionService"
-import {
-  EVIDENCE_SAVED_MESSAGE,
-  formatPlateNumber,
-} from "@/utils/plateDisplay"
+import { formatPlateNumber } from "@/utils/plateDisplay"
 
 type EvidencePreviewDialogProps = {
   detection: DetectionItem | null
@@ -297,19 +294,6 @@ export default function EvidencePreviewDialog({
             )}
           </div>
 
-          {imageUrl && (
-            <p
-              className="
-                mt-4
-
-                text-xs
-                font-semibold
-                text-zinc-500
-              "
-            >
-              {EVIDENCE_SAVED_MESSAGE}
-            </p>
-          )}
         </div>
       </DialogContent>
     </Dialog>

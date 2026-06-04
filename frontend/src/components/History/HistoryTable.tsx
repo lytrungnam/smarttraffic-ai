@@ -251,6 +251,21 @@ export default function HistoryTable({
                   text-zinc-400
                 "
                 >
+                  Confidence
+                </th>
+
+                <th
+                  className="
+                  px-6 py-5
+
+                  text-left
+
+                  text-xs
+                  font-semibold
+
+                  text-zinc-400
+                "
+                >
                   Location
                 </th>
 
@@ -321,7 +336,7 @@ export default function HistoryTable({
               {isLoading && (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     className="
                       px-6 py-10
                       text-center
@@ -338,7 +353,7 @@ export default function HistoryTable({
               {!isLoading && error && (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     className="
                       px-6 py-10
                       text-center
@@ -355,7 +370,7 @@ export default function HistoryTable({
               {!isLoading && !error && records.length === 0 && (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     className="
                         px-6 py-10
                         text-center
@@ -446,6 +461,20 @@ export default function HistoryTable({
                     "
                       >
                         {getVehicleClassLabel(item.vehicle_type)}
+                      </span>
+                    </td>
+
+                    {/* CONFIDENCE */}
+                    <td className="px-6 py-5">
+                      <span
+                        className="
+                      text-sm
+                      font-semibold
+
+                      text-cyan-400
+                    "
+                      >
+                        {item.confidence ?? 0}%
                       </span>
                     </td>
 

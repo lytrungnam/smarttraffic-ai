@@ -40,12 +40,18 @@ def get_detection_summary(session: Session):
         .limit(5)
     ).all()
 
+    valid_plate_filter = (
+        func.upper(func.trim(Detection.plate_number)).notin_(
+            ["", "UNKNOWN", "UNKNOWN_PLATE", "NULL"]
+        )
+    )
+
     unique_plates = session.exec(
         select(
             func.count(
                 func.distinct(Detection.plate_number)
             )
-        )
+        ).where(valid_plate_filter)
     ).one()
 
     vehicle_type_counts = dict.fromkeys(TRAFFIC_VEHICLE_CLASSES, 0)

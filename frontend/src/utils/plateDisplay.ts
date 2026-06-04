@@ -44,6 +44,3 @@ export const isLowOcrConfidence = (
 
 export const LOW_OCR_CONFIDENCE_MESSAGE =
   "OCR confidence is low. Try a clearer, brighter image with a less tilted plate."
-
-export const EVIDENCE_SAVED_LABEL = "Evidence Saved"
-export const EVIDENCE_SAVED_MESSAGE = "Evidence image has been saved."

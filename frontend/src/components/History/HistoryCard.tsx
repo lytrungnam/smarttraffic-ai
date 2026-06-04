@@ -6,6 +6,7 @@ import {
   Clock3,
   Eye,
   MapPin,
+  ScanLine,
   ShieldAlert,
 } from "lucide-react"
 
@@ -389,7 +390,7 @@ export default function HistoryCard({ records, isLoading }: HistoryCardProps) {
                   </p>
                 </div>
 
-                {/* REPORT */}
+                {/* OCR CONFIDENCE */}
                 <div
                   className="
                   rounded-2xl
@@ -409,7 +410,7 @@ export default function HistoryCard({ records, isLoading }: HistoryCardProps) {
                     gap-3
                   "
                   >
-                    <ShieldAlert className="h-5 w-5 text-red-400" />
+                    <ScanLine className="h-5 w-5 text-cyan-400" />
 
                     <h3
                       className="
@@ -419,7 +420,7 @@ export default function HistoryCard({ records, isLoading }: HistoryCardProps) {
                       text-white
                     "
                     >
-                      Detection Event
+                      OCR Confidence
                     </h3>
                   </div>
 
@@ -429,10 +430,10 @@ export default function HistoryCard({ records, isLoading }: HistoryCardProps) {
                     font-semibold
                     tracking-tight
 
-                    text-red-400
+                    text-cyan-400
                   "
                   >
-                    AI Detection Stored
+                    {item.confidence ?? 0}%
                   </h2>
 
                   <p
@@ -457,39 +458,9 @@ export default function HistoryCard({ records, isLoading }: HistoryCardProps) {
 
                 lg:flex-row
                 lg:items-center
-                lg:justify-between
+                lg:justify-end
               "
               >
-                {/* LEFT */}
-                <div
-                  className="
-                  flex items-center gap-2
-                "
-                >
-                  <span
-                    className="
-                    h-2 w-2
-
-                    animate-pulse
-
-                    rounded-full
-
-                    bg-green-400
-                  "
-                  />
-
-                  <span
-                    className="
-                    text-xs
-                    font-semibold
-
-                    text-green-400
-                  "
-                  >
-                    Synced With Central Database
-                  </span>
-                </div>
-
                 {/* BUTTON */}
                 <button
                   type="button"

@@ -5,7 +5,6 @@ import {
   CheckCircle2,
   Clock3,
   Download,
-  FileSearch,
   MapPin,
   ScanLine,
   ShieldAlert,
@@ -18,8 +17,6 @@ import { getVehicleClassLabel } from "@/constants/vehicleClasses"
 import type { DetectionItem } from "@/services/detectionService"
 import { getLatestDetections } from "@/services/detectionService"
 import {
-  EVIDENCE_SAVED_LABEL,
-  EVIDENCE_SAVED_MESSAGE,
   LOW_OCR_CONFIDENCE_MESSAGE,
   formatPlateNumber,
   formatPlateStatus,
@@ -246,7 +243,7 @@ export default function DetectionResult() {
                       </div>
                     </div>
 
-                    <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+                    <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2">
                       <div className="rounded-3xl border border-white/10 bg-black/20 p-5">
                         <div className="mb-5 flex items-center gap-3">
                           <ScanLine className="h-5 w-5 text-cyan-400" />
@@ -306,34 +303,9 @@ export default function DetectionResult() {
                         </p>
                       </div>
 
-                      <div className="rounded-3xl border border-white/10 bg-black/20 p-5">
-                        <div className="mb-5 flex items-center gap-3">
-                          <FileSearch className="h-5 w-5 text-yellow-400" />
-                          <h4 className="text-sm font-semibold text-white">
-                            Evidence
-                          </h4>
-                        </div>
-
-                        <h2 className="text-2xl font-semibold tracking-tight text-yellow-400">
-                          {item.image_path ? EVIDENCE_SAVED_LABEL : "Unavailable"}
-                        </h2>
-
-                        <p className="mt-3 text-sm text-zinc-400">
-                          {item.image_path
-                            ? EVIDENCE_SAVED_MESSAGE
-                            : "No evidence image is available."}
-                        </p>
-                      </div>
                     </div>
 
-                    <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="h-2 w-2 animate-pulse rounded-full bg-green-400" />
-                        <span className="text-xs font-semibold text-green-400">
-                          AI Detection Stored
-                        </span>
-                      </div>
-
+                    <div className="mt-8 flex justify-end">
                       <button
                         type="button"
                         disabled={!item.image_path}
