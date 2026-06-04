@@ -22,6 +22,7 @@ class OCRResult:
     confidence: float
     accepted: bool
     reason: str
+    candidates: list[dict]
 
 
 def _get_reader():
@@ -133,19 +134,19 @@ def _is_plate_like(text: str) -> tuple[bool, str]:
     if not text:
         return False, "empty normalized OCR text"
 
-    if len(text) < 4:
+    if len(text) < 5:
         return False, "normalized OCR text too short"
 
-    if len(text) > 12:
+    if len(text) > 10:
         return False, "normalized OCR text too long"
 
     digit_count = sum(char.isdigit() for char in text)
     letter_count = sum(char.isalpha() for char in text)
 
-    if digit_count < 2:
-        return False, "normalized OCR text has fewer than two digits"
+    if digit_count == 0:
+        return False, "normalized OCR text has no digits"
 
-    if letter_count == 0 and len(text) < 6:
+    if letter_count == 0 and digit_count < 5:
         return False, "numeric-only OCR text is too short"
 
     return True, "accepted plate-like OCR text"
@@ -161,53 +162,77 @@ def format_vn_plate(text: str) -> str:
     return text
 
 
-def _prepare_ocr_images(plate_image: np.ndarray) -> list[tuple[str, np.ndarray]]:
-    resized = cv2.resize(
-        plate_image,
-        None,
-        fx=3,
-        fy=3,
-        interpolation=cv2.INTER_CUBIC,
-    )
-
-    if len(resized.shape) == 3:
-        rgb = cv2.cvtColor(resized, cv2.COLOR_BGR2RGB)
-        gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
-    else:
-        rgb = resized
-        gray = resized
-
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-    contrasted = clahe.apply(gray)
-
+def _sharpen(image: np.ndarray) -> np.ndarray:
     sharpen_kernel = np.array(
         [[0, -1, 0], [-1, 5, -1], [0, -1, 0]],
         dtype=np.float32,
     )
-    sharpened = cv2.filter2D(contrasted, -1, sharpen_kernel)
+    return cv2.filter2D(image, -1, sharpen_kernel)
 
-    adaptive = cv2.adaptiveThreshold(
-        sharpened,
-        255,
-        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-        cv2.THRESH_BINARY,
-        31,
-        7,
-    )
-    _, otsu = cv2.threshold(
-        sharpened,
-        0,
-        255,
-        cv2.THRESH_BINARY + cv2.THRESH_OTSU,
-    )
 
-    return [
-        ("rgb_resized", rgb),
-        ("gray_contrast", contrasted),
-        ("gray_sharpened", sharpened),
-        ("adaptive_threshold", adaptive),
-        ("otsu_threshold", otsu),
-    ]
+def _prepare_ocr_images(plate_image: np.ndarray) -> list[tuple[str, np.ndarray]]:
+    variants: list[tuple[str, np.ndarray]] = []
+    clahe = cv2.createCLAHE(clipLimit=2.5, tileGridSize=(8, 8))
+
+    for scale in (3, 4):
+        resized = cv2.resize(
+            plate_image,
+            None,
+            fx=scale,
+            fy=scale,
+            interpolation=cv2.INTER_CUBIC,
+        )
+
+        if len(resized.shape) == 3:
+            rgb = cv2.cvtColor(resized, cv2.COLOR_BGR2RGB)
+            gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
+        else:
+            rgb = resized
+            gray = resized
+
+        denoised = cv2.fastNlMeansDenoising(gray, None, 10, 7, 21)
+        contrasted = clahe.apply(denoised)
+        sharpened = _sharpen(contrasted)
+        bilateral = cv2.bilateralFilter(sharpened, 7, 50, 50)
+
+        adaptive = cv2.adaptiveThreshold(
+            bilateral,
+            255,
+            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+            cv2.THRESH_BINARY,
+            31,
+            7,
+        )
+        adaptive_inverse = cv2.adaptiveThreshold(
+            bilateral,
+            255,
+            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+            cv2.THRESH_BINARY_INV,
+            31,
+            7,
+        )
+        _, otsu = cv2.threshold(
+            bilateral,
+            0,
+            255,
+            cv2.THRESH_BINARY + cv2.THRESH_OTSU,
+        )
+
+        variants.extend(
+            [
+                (f"rgb_resized_{scale}x", rgb),
+                (f"gray_{scale}x", gray),
+                (f"gray_denoised_{scale}x", denoised),
+                (f"clahe_{scale}x", contrasted),
+                (f"sharpened_{scale}x", sharpened),
+                (f"bilateral_{scale}x", bilateral),
+                (f"adaptive_threshold_{scale}x", adaptive),
+                (f"adaptive_inverse_{scale}x", adaptive_inverse),
+                (f"otsu_threshold_{scale}x", otsu),
+            ]
+        )
+
+    return variants
 
 
 def read_plate_ocr(
@@ -218,7 +243,7 @@ def read_plate_ocr(
 ) -> OCRResult:
     if plate_image is None or plate_image.size == 0:
         logger.warning("[OCR] %s rejected: empty plate crop", context)
-        return OCRResult(unknown_value, "", "", 0.0, False, "empty plate crop")
+        return OCRResult(unknown_value, "", "", 0.0, False, "empty plate crop", [])
 
     logger.info("[OCR] %s crop_shape=%s", context, tuple(plate_image.shape))
 
@@ -229,7 +254,9 @@ def read_plate_ocr(
         confidence=0.0,
         accepted=False,
         reason="no OCR text detected",
+        candidates=[],
     )
+    candidates: list[dict] = []
 
     try:
         reader = _get_reader()
@@ -247,6 +274,15 @@ def read_plate_ocr(
                 confidence = float(raw_result[2])
                 normalized = normalize_plate(raw_text)
                 accepted, reason = _is_plate_like(normalized)
+                candidate = {
+                    "variant": variant_name,
+                    "raw_text": raw_text,
+                    "normalized_text": normalized,
+                    "confidence": confidence,
+                    "accepted": accepted,
+                    "reason": reason,
+                }
+                candidates.append(candidate)
 
                 logger.info(
                     "[OCR] %s raw=%r normalized=%r confidence=%.3f "
@@ -268,6 +304,7 @@ def read_plate_ocr(
                             confidence=confidence,
                             accepted=False,
                             reason=reason,
+                            candidates=candidates,
                         )
                     continue
 
@@ -279,11 +316,12 @@ def read_plate_ocr(
                         confidence=confidence,
                         accepted=True,
                         reason=reason,
+                        candidates=candidates,
                     )
 
     except Exception as exc:
         logger.exception("[OCR] %s failed: %s", context, exc)
-        return OCRResult(unknown_value, "", "", 0.0, False, str(exc))
+        return OCRResult(unknown_value, "", "", 0.0, False, str(exc), candidates)
 
     if not best_result.accepted:
         logger.warning(
@@ -294,6 +332,7 @@ def read_plate_ocr(
             best_result.reason,
         )
 
+    best_result.candidates = candidates
     return best_result
 
 

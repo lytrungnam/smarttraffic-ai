@@ -64,7 +64,15 @@ def _save_debug_crop(crop, index: int) -> str | None:
     return str(path)
 
 
-def _debug_payload(frame, vehicles: list[dict], plates: list[dict], ocr_count: int, final_count: int):
+def _debug_payload(
+    frame,
+    vehicles: list[dict],
+    plates: list[dict],
+    ocr_count: int,
+    final_count: int,
+    ocr_debug: dict | None = None,
+):
+    ocr_debug = ocr_debug or {}
     return {
         "image_read": frame is not None,
         "image_shape": list(frame.shape) if frame is not None else None,
@@ -72,6 +80,10 @@ def _debug_payload(frame, vehicles: list[dict], plates: list[dict], ocr_count: i
         "plate_count": len(plates),
         "ocr_count": ocr_count,
         "final_count": final_count,
+        "crop_count": ocr_debug.get("crop_count", 0),
+        "raw_ocr_candidates": ocr_debug.get("raw_ocr_candidates", []),
+        "best_ocr_text": ocr_debug.get("best_ocr_text"),
+        "best_ocr_confidence": ocr_debug.get("best_ocr_confidence", 0),
         "weights": {
             "vehicle": str(get_vehicle_model_path()),
             "plate": str(get_plate_model_path()),
@@ -94,6 +106,28 @@ def run_inference(image_bytes: bytes) -> dict:
 
     results = []
     ocr_count = 0
+    ocr_debug = {
+        "crop_count": 0,
+        "raw_ocr_candidates": [],
+        "best_ocr_text": None,
+        "best_ocr_confidence": 0,
+    }
+
+    def update_ocr_debug(ocr):
+        ocr_debug["raw_ocr_candidates"].append(
+            {
+                "plate_text": ocr.plate_text,
+                "raw_ocr_text": ocr.raw_ocr_text,
+                "normalized_ocr_text": ocr.normalized_text,
+                "confidence": ocr.confidence,
+                "accepted": ocr.accepted,
+                "reason": ocr.reason,
+                "candidates": ocr.candidates,
+            }
+        )
+        if ocr.confidence >= float(ocr_debug["best_ocr_confidence"]):
+            ocr_debug["best_ocr_text"] = ocr.normalized_text or ocr.raw_ocr_text
+            ocr_debug["best_ocr_confidence"] = ocr.confidence
 
     for index, plate in enumerate(plates):
         crop = _crop_with_padding(frame, plate["box"])
@@ -101,12 +135,14 @@ def run_inference(image_bytes: bytes) -> dict:
             logger.warning("[OCR] plate_%s skipped: invalid crop box=%s", index, plate["box"])
             continue
 
+        ocr_debug["crop_count"] += 1
         debug_crop_path = _save_debug_crop(crop, index)
         ocr = read_plate_ocr(
             crop,
             context=f"upload_plate_{index}",
             unknown_value=UNKNOWN_PLATE,
         )
+        update_ocr_debug(ocr)
         vehicle_type = get_vehicle_type_from_plate(plate["box"], vehicles)
         if vehicle_type == "unclassified":
             vehicle_type = _nearest_vehicle_type(plate["box"], vehicles)
@@ -134,6 +170,7 @@ def run_inference(image_bytes: bytes) -> dict:
         )
         if ocr.accepted and ocr.plate_text != UNKNOWN_TEXT:
             ocr_count += 1
+            update_ocr_debug(ocr)
             results.append({
                 "plate_number": ocr.plate_text,
                 "raw_ocr_text": ocr.raw_ocr_text,
@@ -159,5 +196,6 @@ def run_inference(image_bytes: bytes) -> dict:
             plates,
             ocr_count,
             len(final_results),
+            ocr_debug,
         ),
     }
