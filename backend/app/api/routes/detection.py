@@ -4,6 +4,7 @@ import time
 from pathlib import Path
 
 import cv2
+import numpy as np
 from fastapi import APIRouter, File, HTTPException, Query, UploadFile
 from fastapi.responses import StreamingResponse
 
@@ -59,17 +60,144 @@ def _get_upload_kind(file: UploadFile) -> str:
     )
 
 
+def _format_annotation_confidence(confidence: float | int | None) -> str:
+    value = float(confidence or 0)
+    if value > 1:
+        value /= 100
+    return f"{value:.2f}"
+
+
+def _draw_label(
+    image,
+    text: str,
+    x: int,
+    y: int,
+    color: tuple[int, int, int],
+):
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    scale = 0.55
+    thickness = 1
+    padding = 5
+    text_width, text_height = cv2.getTextSize(
+        text,
+        font,
+        scale,
+        thickness,
+    )[0]
+
+    label_y = y - 8 if y - text_height - padding * 2 > 0 else y + text_height + 12
+    top_left = (x, label_y - text_height - padding * 2)
+    bottom_right = (x + text_width + padding * 2, label_y)
+
+    cv2.rectangle(image, top_left, bottom_right, color, -1)
+    cv2.putText(
+        image,
+        text,
+        (x + padding, label_y - padding),
+        font,
+        scale,
+        (0, 0, 0),
+        thickness,
+        cv2.LINE_AA,
+    )
+
+
+def _draw_box(
+    image,
+    box: list[int] | None,
+    label: str,
+    color: tuple[int, int, int],
+    thickness: int,
+):
+    if not box or len(box) != 4:
+        return
+
+    height, width = image.shape[:2]
+    x1, y1, x2, y2 = box
+    x1 = max(0, min(width - 1, int(x1)))
+    x2 = max(0, min(width - 1, int(x2)))
+    y1 = max(0, min(height - 1, int(y1)))
+    y2 = max(0, min(height - 1, int(y2)))
+
+    if x2 <= x1 or y2 <= y1:
+        return
+
+    cv2.rectangle(image, (x1, y1), (x2, y2), color, thickness)
+    _draw_label(image, label, x1, y1, color)
+
+
+def _build_annotated_evidence(
+    evidence_bytes: bytes,
+    annotation_data: dict | None,
+) -> bytes | None:
+    if not annotation_data:
+        return None
+
+    frame = cv2.imdecode(
+        np.frombuffer(evidence_bytes, np.uint8),
+        cv2.IMREAD_COLOR,
+    )
+    if frame is None:
+        return None
+
+    annotated = frame.copy()
+    vehicle_color = (40, 220, 80)
+    plate_color = (0, 210, 255)
+
+    for vehicle in annotation_data.get("vehicles", []):
+        label = (
+            f"{vehicle.get('label', 'vehicle')} "
+            f"{_format_annotation_confidence(vehicle.get('confidence'))}"
+        )
+        _draw_box(
+            annotated,
+            vehicle.get("box"),
+            label,
+            vehicle_color,
+            2,
+        )
+
+    for plate in annotation_data.get("plates", []):
+        plate_text = plate.get("plate_number")
+        if plate_text == "UNKNOWN_PLATE":
+            plate_label = "Unreadable Plate"
+        elif plate_text and plate_text != "UNKNOWN":
+            plate_label = str(plate_text)
+        else:
+            plate_label = "plate"
+
+        label = (
+            f"{plate_label} "
+            f"{_format_annotation_confidence(plate.get('confidence'))}"
+        )
+        _draw_box(
+            annotated,
+            plate.get("box"),
+            label,
+            plate_color,
+            2,
+        )
+
+    success, buffer = cv2.imencode(".jpg", annotated)
+    if not success:
+        return None
+
+    return buffer.tobytes()
+
+
 async def _save_detection_results(
     *,
     db: SessionDep,
     results: list[dict],
     evidence_bytes: bytes,
     evidence_label: str,
+    annotation_data: dict | None = None,
     max_remaining: int | None = None,
 ) -> list[dict]:
     saved = []
     storage_dir = Path("storage/detections")
     storage_dir.mkdir(parents=True, exist_ok=True)
+    annotated_bytes = _build_annotated_evidence(evidence_bytes, annotation_data)
 
     for index, result in enumerate(results):
         if max_remaining is not None and len(saved) >= max_remaining:
@@ -93,6 +221,14 @@ async def _save_detection_results(
         with open(image_path, "wb") as f:
             f.write(evidence_bytes)
 
+        annotated_image_path = None
+        if annotated_bytes:
+            annotated_image_path = image_path.with_name(
+                f"{image_path.stem}_annotated.jpg"
+            )
+            with open(annotated_image_path, "wb") as f:
+                f.write(annotated_bytes)
+
         detection = Detection(
             plate_number=plate_text,
             vehicle_type=result.get("vehicle_type", "unclassified"),
@@ -106,6 +242,9 @@ async def _save_detection_results(
         db.refresh(detection)
 
         payload = serialize_detection(detection)
+        if annotated_image_path:
+            payload["annotated_image_path"] = str(annotated_image_path)
+            payload["annotated_evidence_path"] = str(annotated_image_path)
         await manager.broadcast(payload)
         saved.append(payload)
 
@@ -172,6 +311,7 @@ async def _process_image_upload(db: SessionDep, contents: bytes):
         results=results,
         evidence_bytes=contents,
         evidence_label="upload",
+        annotation_data=inference.get("annotations"),
     )
 
     debug["final_count"] = len(saved)
@@ -253,6 +393,7 @@ async def _process_video_upload(
                     results=inference["results"],
                     evidence_bytes=frame_bytes,
                     evidence_label=f"video_frame_{frame_index}",
+                    annotation_data=inference.get("annotations"),
                     max_remaining=remaining,
                 )
             )

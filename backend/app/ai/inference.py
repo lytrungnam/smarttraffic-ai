@@ -201,6 +201,10 @@ def run_inference(image_bytes: bytes) -> dict:
 
     return {
         "results": results,
+        "annotations": {
+            "vehicles": vehicles,
+            "plates": results,
+        },
         "debug": _debug_payload(
             frame,
             vehicles,

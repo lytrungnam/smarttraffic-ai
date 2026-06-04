@@ -21,6 +21,10 @@ export type DetectionItem = {
 
   image_path?: string
 
+  annotated_image_path?: string
+
+  annotated_evidence_path?: string
+
   cropped_plate_path?: string
 
   violation_type?: string

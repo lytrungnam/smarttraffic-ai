@@ -32,7 +32,11 @@ export default function EvidencePreviewDialog({
 
   const loadingTimeoutRef = useRef<number | null>(null)
 
-  const imageUrl = getEvidenceImageUrl(detection?.image_path)
+  const imageUrl = getEvidenceImageUrl(
+    detection?.annotated_image_path ??
+      detection?.annotated_evidence_path ??
+      detection?.image_path,
+  )
 
   useEffect(() => {
     if (!open) {

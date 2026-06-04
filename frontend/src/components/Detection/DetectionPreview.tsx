@@ -34,7 +34,11 @@ export default function DetectionPreview() {
   }, [])
 
   const previewDetection = detections[previewIndex] ?? null
-  const evidenceUrl = getEvidenceImageUrl(previewDetection?.image_path)
+  const evidenceUrl = getEvidenceImageUrl(
+    previewDetection?.annotated_image_path ??
+      previewDetection?.annotated_evidence_path ??
+      previewDetection?.image_path,
+  )
 
   const handleDownload = () => {
     if (!evidenceUrl) return
