@@ -147,6 +147,36 @@ Set the `DOMAIN`, by default `localhost` (for development), but when deploying y
 export DOMAIN=fastapi-project.example.com
 ```
 
+## Realtime Deployment Strategy
+
+This project uses Railway for the production backend API, PostgreSQL database, authentication, upload detection, history, analytics, and subscription management. Railway is not suitable for continuous realtime YOLO/OCR monitoring because it does not provide GPU resources and has limited CPU/RAM for the intense realtime processing workload.
+
+For stable realtime camera demo performance, run the realtime AI loop locally instead of on Railway.
+
+Recommended configuration:
+
+- Production backend on Railway:
+
+```bash
+export ENABLE_AI_STARTUP=false
+```
+
+- Local realtime demo:
+
+```bash
+export ENABLE_AI_STARTUP=true
+export CAMERA_SOURCE=0
+```
+
+or:
+
+```bash
+export ENABLE_AI_STARTUP=true
+export CAMERA_SOURCE=path/to/demo.mp4
+```
+
+Use Railway for production API and database integration, and use the local environment for realtime AI camera demo monitoring.
+
 Set the `POSTGRES_PASSWORD` to something different than `changethis`:
 
 ```bash

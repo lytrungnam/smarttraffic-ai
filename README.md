@@ -288,12 +288,37 @@ BACKEND_CORS_ORIGINS=https://smarttraffic-ai-frontend.vercel.app
 ENABLE_AI_STARTUP=False
 ```
 
-4. For a production camera source, set:
+#### Realtime Deployment Strategy
+
+The production backend is deployed on Railway to serve API requests, store data, and process image/video uploads. For realtime monitoring, the system supports camera sources through the `CAMERA_SOURCE` configuration.
+
+Railway does not provide GPU resources and has limited CPU/RAM for continuous YOLO/OCR processing. For stable realtime AI performance, run realtime monitoring locally in a demo environment rather than continuously on Railway.
+
+Recommended setup:
+
+- Production:
 
 ```env
-ENABLE_AI_STARTUP=True
-CAMERA_SOURCE=<rtsp-or-http-camera-url>
+ENABLE_AI_STARTUP=false
 ```
+
+- Local realtime demo:
+
+```env
+ENABLE_AI_STARTUP=true
+CAMERA_SOURCE=0
+```
+
+or:
+
+```env
+ENABLE_AI_STARTUP=true
+CAMERA_SOURCE=path/to/demo.mp4
+```
+
+Conclusion:
+
+Railway is used for production API, authentication, upload detection, history, analytics, subscription, and database integration. Local environment is used for realtime AI camera demo.
 
 ## API Documentation
 
