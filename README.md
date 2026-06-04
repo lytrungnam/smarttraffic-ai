@@ -1,443 +1,346 @@
-# 🚗 SmartTraffic AI — Hệ Thống Nhận Diện Phương Tiện
+# SmartTraffic AI
 
-Hệ thống nhận diện phương tiện và biển số xe thời gian thực sử dụng **YOLOv5 + EasyOCR + FastAPI + React**. Backend xử lý video liên tục, phát hiện xe và đọc biển số, lưu vào PostgreSQL và đẩy kết quả lên frontend qua WebSocket.
+SmartTraffic AI is a full-stack traffic monitoring and automatic license plate recognition platform. It combines a FastAPI backend, React + Vite frontend, PostgreSQL storage, YOLO vehicle detection, YOLO license plate detection, OCR recognition, analytics, camera monitoring, and a SaaS-style subscription prototype with MoMo demo payment.
 
----
+## Project Status
 
-## ⚙️ Yêu cầu cài đặt
+- Active Development
+- Thesis Project
+- Startup Prototype
 
-| Phần mềm | Phiên bản tối thiểu | Link tải |
-|----------|---------------------|----------|
-| **Docker Desktop** | Mới nhất | https://www.docker.com/products/docker-desktop |
-| **Node.js** | >= 18.0 | https://nodejs.org |
-| **Python** | >= 3.10 | https://www.python.org/downloads |
-| **uv** | Mới nhất | https://docs.astral.sh/uv |
-| **Git** | Mới nhất | https://git-scm.com |
-| **Bun** (tuỳ chọn) | >= 1.0 | https://bun.sh |
-
-> 💡 Nếu chỉ chạy bằng Docker thì **không cần** cài Node.js, Python hay uv riêng.
-
----
-
-## 🌐 Online Deployment
+## Online Deployment
 
 | Service | URL |
-|---------|-----|
+| --- | --- |
 | Frontend | https://smarttraffic-ai-frontend.vercel.app |
 | Backend API Docs | https://smarttraffic-ai-production.up.railway.app/docs |
 | Healthcheck | https://smarttraffic-ai-production.up.railway.app/railway-health |
 
----
+## Features
 
-## 🚀 Chạy bằng Docker (Khuyên dùng)
+- User authentication with JWT login and signup.
+- Camera monitoring dashboard with realtime detection feed.
+- Upload-based image detection for vehicle and license plate recognition.
+- Configurable realtime camera source via `CAMERA_SOURCE`.
+- Detection history with search, filters, evidence preview, and export-oriented UI.
+- Analytics dashboard with vehicle type distribution and trained model evaluation metrics.
+- PostgreSQL persistence for users, cameras, detections, and subscriptions.
+- SaaS subscription plans: Free Trial, Basic, Pro, and Enterprise.
+- MoMo demo payment flow for prototype plan activation.
+- Railway backend deployment and Vercel frontend deployment.
 
-```bash
-# Clone project (lần đầu)
-git clone https://github.com/lytrungnam/smarttraffic-ai.git
-cd smarttraffic-ai
+## Architecture
 
-# Tạo file .env (lần đầu) — xem mẫu ở phần Biến môi trường bên dưới
-cp .env.example .env   # hoặc tạo tay
+```text
+User Browser
+  |
+  | HTTPS
+  v
+Vercel Frontend (React + Vite)
+  |
+  | REST API / WebSocket
+  v
+Railway Backend (FastAPI)
+  |
+  | SQLModel / psycopg
+  v
+PostgreSQL
 
-# Chạy toàn bộ stack
-docker compose up --build
+Camera / Upload Image
+  |
+  v
+OpenCV -> YOLO Vehicle Model -> YOLO Plate Model -> OCR -> Detection Records
 ```
 
-Chờ thấy dòng:
-```
-backend  | INFO:     Uvicorn running on http://0.0.0.0:8000
-```
-→ Mở trình duyệt tại **http://localhost:5173** ✅
+## AI Pipeline
 
-**Chế độ hot-reload** (tự reload khi sửa code):
-```bash
-docker compose watch
-```
-
----
-
-## 🛠️ Chạy từng service trên localhost (Phát triển)
-
-### Backend — dùng uv
-
-docker network create traefik-public
-
-docker compose -f compose.yml up backend
-
-```bash
-# Cài uv nếu chưa có (Windows)
-powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-
-cd backend
-
-# Lần đầu: cài dependencies vào .venv
-uv sync
-
-# Chạy dev server
-uv run fastapi dev app/main.py
+```text
+Camera source or uploaded image
+  -> OpenCV image decode / frame capture
+  -> YOLO vehicle detection (vehicle_best.pt)
+  -> YOLO license plate detection (plate_best.pt)
+  -> Plate crop preprocessing
+  -> OCR recognition
+  -> Vehicle-to-plate matching
+  -> PostgreSQL detection record
+  -> Dashboard, history, analytics, and WebSocket updates
 ```
 
-Chờ thấy: `Uvicorn running on http://0.0.0.0:8000` ✅
+The trained vehicle model classes used by analytics are:
 
-> ⚠️ Trước khi chạy local, dừng service đó trong Docker:
-> ```bash
-> docker compose stop backend
-> ```
+- bicycle
+- bus
+- car
+- motorcycle
+- train
+- truck
 
-### Frontend — dùng Bun
+`background` is treated as an evaluation class, not a public traffic category.
 
-```bash
-# từ thư mục gốc hoặc frontend/
-bun run dev
-# hoặc: npm run dev
-```
+## AI Model
 
-Chờ thấy: `Local: http://localhost:5173` ✅
+- `backend/app/ai/weights/vehicle_best.pt`: YOLO model for vehicle detection.
+- `backend/app/ai/weights/plate_best.pt`: YOLO model for license plate localization.
+- `backend/app/ai/ocr_reader.py`: OCR pipeline for cropped plate images.
+- Analytics uses stored detection records for traffic distribution and separate offline validation values for model evaluation.
 
-> ⚠️ Tương tự, dừng frontend Docker trước nếu đang chạy:
-> ```bash
-> docker compose stop frontend
-> ```
-
----
-
-## 🌐 Địa chỉ local development
-
-| Service | URL |
-|---------|-----|
-| 🖥️ Frontend (Dashboard) | http://localhost:5173 |
-| ⚙️ Backend API | http://localhost:8000 |
-| 📖 Swagger UI (API Docs) | http://localhost:8000/docs |
-| 🗄️ Adminer (Quản lý DB) | http://localhost:8080 |
-| 🔀 Traefik UI | http://localhost:8090 |
-| 📧 Mailcatcher | http://localhost:1080 |
-
----
-
-## 🔑 Biến môi trường (.env)
-
-Tạo file `.env` ở **thư mục gốc project** (cùng cấp với `compose.yml`):
+Runtime detection thresholds can be configured with:
 
 ```env
-# =========================================================
-# DOMAIN & HOST
-# =========================================================
-DOMAIN=localhost
-FRONTEND_HOST=http://localhost:5173
-ENVIRONMENT=local                       # local | staging | production
-PROJECT_NAME="SmartTraffic AI"
-STACK_NAME=smarttraffic-ai
-
-# =========================================================
-# BACKEND
-# =========================================================
-BACKEND_CORS_ORIGINS=http://localhost,http://localhost:5173,http://127.0.0.1:5173
-SECRET_KEY=supersecretkey123
-FIRST_SUPERUSER=admin@alpr.com
-FIRST_SUPERUSER_PASSWORD=12345678
-
-# =========================================================
-# POSTGRESQL
-# =========================================================
-POSTGRES_SERVER=localhost
-POSTGRES_PORT=5432
-POSTGRES_DB=alpr_db
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=<mật_khẩu_postgres_của_bạn>
-
-# =========================================================
-# EMAIL (tuỳ chọn)
-# =========================================================
-SMTP_HOST=
-SMTP_USER=
-SMTP_PASSWORD=
-EMAILS_FROM_EMAIL=info@alpr.com
-SMTP_TLS=True
-SMTP_SSL=False
-SMTP_PORT=587
-
-# =========================================================
-# SENTRY (tuỳ chọn)
-# =========================================================
-SENTRY_DSN=
-
-# =========================================================
-# DOCKER IMAGES
-# =========================================================
-DOCKER_IMAGE_BACKEND=backend
-DOCKER_IMAGE_FRONTEND=frontend
-
-# =========================================================
-# REALTIME AI CAMERA (tuỳ chọn)
-# =========================================================
-ENABLE_AI_STARTUP=False                 # True để backend tự chạy realtime loop
-CAMERA_SOURCE=                          # 0, RTSP/HTTP camera URL, hoặc path video demo
+VEHICLE_CONFIDENCE_THRESHOLD=0.25
+PLATE_CONFIDENCE_THRESHOLD=0.25
 ```
 
-> 🔐 **Bảo mật:** Không commit file `.env` lên Git — đã có trong `.gitignore`.
+## Camera Source Support
 
----
-
-## 💳 Subscription & MoMo Demo Payment
-
-SmartTraffic AI dùng mô hình SaaS subscription qua tài khoản đăng nhập JWT thông thường. Không cần ví, khóa thanh toán, hoặc credential MoMo thật.
-
-Các gói hiện có:
-
-| Gói | Giá | Giới hạn chính |
-|-----|-----|----------------|
-| Free Trial | 0 VND | 7 ngày, 1 camera, 100 detections/day, basic history |
-| Basic | 99,000 VND/month | 1 camera, 1,000 detections/day, history, basic analytics |
-| Pro | 299,000 VND/month | 5 cameras, 10,000 detections/day, advanced analytics, export reports |
-| Enterprise | Contact sales | Unlimited cameras, realtime alerts, custom retention, multi-user management |
-
-Frontend có trang `/subscription`. Basic và Pro mở modal "Thanh toán bằng MoMo" với QR placeholder demo; khi người dùng bấm "Tôi đã thanh toán", frontend gọi `POST /api/v1/subscriptions/activate-demo` để kích hoạt gói trong database.
-
-Backend subscription endpoints:
-
-- `GET /api/v1/subscriptions/me`
-- `POST /api/v1/subscriptions/activate-demo`
-
----
-
-## 🏗️ Kiến trúc hệ thống
-
-### AI Detection Pipeline
-
-```
-CAMERA_SOURCE → OpenCV frame → resize 960×540 → mỗi 3 frame:
-  → vehicle_detector.py  (YOLOv5, weights/vehicle_best.pt)
-  → plate_detector.py    (YOLOv5, weights/plate_best.pt)
-  → ocr_reader.py        (EasyOCR trên vùng crop biển số)
-  → vehicle_matcher.py   (ghép bbox biển số → loại xe)
-  → lưu biển số mới vào PostgreSQL + storage/detections/
-  → broadcast JSON đến tất cả WebSocket clients
-```
-
-Vòng lặp realtime chỉ chạy khi `ENABLE_AI_STARTUP=True`. Nguồn camera lấy từ `CAMERA_SOURCE`:
-
-- Webcam local: `CAMERA_SOURCE=0`
-- Camera IP/RTSP: `CAMERA_SOURCE=rtsp://user:pass@host:554/stream`
-- Camera HTTP: `CAMERA_SOURCE=http://host/video`
-- Demo local: `CAMERA_SOURCE=backend/demo/sample.mp4`
-
-Nếu `ENABLE_AI_STARTUP=True` nhưng thiếu `CAMERA_SOURCE`, backend log warning và không start realtime loop. Upload detection endpoint vẫn hoạt động độc lập với realtime loop. Set `saved_plates` là in-memory dedup guard — reset khi restart.
-
-Railway realtime env tối thiểu:
+Realtime detection is disabled by default. Enable it only when a camera source is configured.
 
 ```env
-ENVIRONMENT=production
-ENABLE_AI_STARTUP=True
-CAMERA_SOURCE=rtsp://user:pass@host:554/stream
-```
-
-Local demo env tối thiểu:
-
-```env
-ENVIRONMENT=local
 ENABLE_AI_STARTUP=True
 CAMERA_SOURCE=0
 ```
 
-### Cấu trúc Backend
+Supported `CAMERA_SOURCE` values:
 
-- `app/main.py` — FastAPI entry: mount `/storage`, fire startup task, set CORS
-- `app/core/config.py` — Settings qua `pydantic-settings` từ `../.env`
-- `app/api/deps.py` — Shared dependencies: `SessionDep`, `CurrentUser`, `CurrentSuperUser`
-- `app/api/routes/` — Route modules: `login`, `users`, `detection`, `analytics`, `ws`, `subscriptions`
-- `app/services/websocket_service.py` — `ConnectionManager` singleton với broadcast + disconnect cleanup
-- `app/services/detection_engine.py` — Vòng lặp AI chính
-- `app/services/tracking_service.py` — Kalman filter + Hungarian matching tracker
-- `app/models/` — SQLModel table definitions (UUID PKs)
-- `app/ai/` — Bốn AI module load lúc import (YOLO models là singleton)
+- `0` for local webcam.
+- RTSP URL for IP cameras.
+- HTTP camera stream URL.
+- Local video file path for demonstration.
 
-### Cấu trúc Frontend
+If `ENABLE_AI_STARTUP=True` and `CAMERA_SOURCE` is missing, the backend logs a warning and continues without starting the realtime loop. Upload detection remains available.
 
-- **TanStack Router** — file-based routing trong `src/routes/`. Routes dưới `_layout/` yêu cầu auth.
-- **TanStack Query** — quản lý server state. `src/client/` là typed API client tự động generate.
-- Auth: JWT token lưu trong `localStorage`, inject qua `OpenAPI.TOKEN` trong `main.tsx`. 401/403 → xoá token, redirect `/login`.
-- `src/components/` — tổ chức theo feature: `Dashboard/`, `Detection/`, `History/`, `Analytics/`, `Camera/`, `Admin/`, `Common/`, `ui/`.
+## Subscription System
 
-### Database
+SmartTraffic AI includes a SaaS prototype subscription system.
 
-PostgreSQL qua SQLModel + psycopg3. Alembic migrations trong `backend/app/alembic/versions/`. Backend gọi `SQLModel.metadata.create_all(engine)` lúc startup.
+| Plan | Price | Main Limits |
+| --- | --- | --- |
+| Free Trial | 0 VND | 7 days, 1 camera, 100 detections/day, basic history |
+| Basic | 99,000 VND/month | 1 camera, 1,000 detections/day, detection history, basic analytics |
+| Pro | 299,000 VND/month | 5 cameras, 10,000 detections/day, advanced analytics, export reports, priority processing |
+| Enterprise | Contact sales | Unlimited cameras, realtime alerts, custom retention, multi-user management, priority support |
 
-Quan hệ chính: `Camera` → `Detection` (one-to-many, cascade delete trong migration `1a31ce608336`).
+### Commercialization
 
----
+The current payment flow is a safe MoMo demo payment UI for thesis and startup-prototype validation. Basic and Pro plans show a MoMo QR placeholder and activate after the user confirms demo payment. No real payment credentials are stored in this repository.
 
-## 📁 Cấu trúc thư mục
+Future commercialization work may add:
 
-```
-smarttraffic-ai/
-├── .env                              # Biến môi trường (tạo tay, không commit)
-├── compose.yml                       # Docker Compose
-├── compose.override.yml              # Docker Compose (dev override)
-├── requirements.txt                  # Python dependencies (cài không dùng Docker)
-│
-├── backend/
-│   ├── app/
-│   │   ├── main.py                   # FastAPI entry point
-│   │   ├── ai/
-│   │   │   ├── vehicle_detector.py   # YOLOv5 phát hiện xe
-│   │   │   ├── plate_detector.py     # YOLOv5 phát hiện biển số
-│   │   │   ├── ocr_reader.py         # EasyOCR đọc chữ biển số
-│   │   │   ├── vehicle_matcher.py    # Ghép biển số với xe
-│   │   │   └── weights/              # Model weights (.pt files)
-│   │   ├── api/routes/               # API endpoints
-│   │   ├── core/                     # Config, DB, security
-│   │   ├── models/                   # SQLModel table definitions
-│   │   └── services/                 # Detection engine, WebSocket, tracker
-│   ├── pyproject.toml                # Python dependencies (quản lý bằng uv)
-│   └── storage/                      # Ảnh biển số đã lưu
-│
-└── frontend/
-    ├── src/
-    │   ├── routes/                   # File-based routing (TanStack Router)
-    │   ├── components/               # React components theo feature
-    │   └── client/                   # API client tự động generate (không sửa tay)
-    ├── package.json
-    └── vite.config.ts
-```
+- Real MoMo payment gateway integration.
+- Invoice and receipt management.
+- Subscription renewal automation.
+- Admin approval workflow for Enterprise customers.
+- Usage-based billing and camera quota enforcement.
 
----
+## Screenshots
 
-## 🧰 Tech Stack
+Add thesis screenshots here before final submission:
 
-### Backend
-| Công nghệ | Phiên bản | Mục đích |
-|-----------|-----------|----------|
-| Python | >= 3.10 | Ngôn ngữ chính |
-| FastAPI | 0.136 | Web framework |
-| uv | Mới nhất | Package manager |
-| SQLModel + psycopg3 | - | ORM + PostgreSQL |
-| Alembic | 1.18 | Database migrations |
-| PyJWT + pwdlib | - | Xác thực JWT |
-| Sentry SDK | 2.x | Giám sát lỗi production |
+- Dashboard overview.
+- Realtime detection page.
+- Upload detection result.
+- Detection history.
+- Analytics dashboard.
+- Subscription and MoMo demo payment modal.
 
-### AI / Computer Vision
-| Công nghệ | Mục đích |
-|-----------|----------|
-| YOLOv5 (ultralytics) | Phát hiện xe và biển số |
-| EasyOCR | Đọc text từ biển số |
-| OpenCV | Xử lý frame video |
-| filterpy + scipy | Kalman filter tracking |
+## Installation
 
-### Frontend
-| Công nghệ | Phiên bản | Mục đích |
-|-----------|-----------|----------|
-| React | 19 | UI framework |
-| TypeScript | 5.9 | Type safety |
-| Vite | 7 | Build tool |
-| TailwindCSS | 4 | Styling |
-| TanStack Router | 1.x | File-based routing |
-| TanStack Query | 5.x | Server state management |
-| Recharts | 3.x | Biểu đồ thống kê |
-| shadcn + Radix UI | - | UI components |
-| Playwright | 1.x | E2E testing |
+### Requirements
 
-### Hạ tầng
-| Công nghệ | Mục đích |
-|-----------|----------|
-| Docker + Compose | Containerization |
-| Traefik 3.x | Reverse proxy |
-| PostgreSQL 18 | Cơ sở dữ liệu |
+| Tool | Recommended Version |
+| --- | --- |
+| Docker Desktop | Latest |
+| Python | 3.10+ |
+| Node.js | 18+ |
+| uv | Latest |
+| Bun or npm | Bun 1.0+ or npm bundled with Node.js |
+| Git | Latest |
 
----
-
-## 🔧 Lệnh phát triển
-
-### Backend (chạy trong `backend/`)
+### Clone
 
 ```bash
-# Dev server
-uv run fastapi dev app/main.py
+git clone https://github.com/lytrungnam/smarttraffic-ai.git
+cd smarttraffic-ai
+```
 
-# Lint và type-check
+Create a project `.env` file from your deployment or local values.
+
+## Local Development
+
+### Docker
+
+```bash
+docker compose up --build
+```
+
+Local services:
+
+| Service | URL |
+| --- | --- |
+| Frontend | http://localhost:5173 |
+| Backend API | http://localhost:8000 |
+| API Docs | http://localhost:8000/docs |
+| Adminer | http://localhost:8080 |
+
+### Backend
+
+```bash
+cd backend
+uv sync
+uv run fastapi dev app/main.py
+```
+
+Useful backend commands:
+
+```bash
 uv run ruff check app
 uv run ruff format app --check
 uv run mypy app
 uv run ty check app
-
-# Tự động format
-uv run ruff check app --fix
-uv run ruff format app
-
-# Tests
-uv run bash scripts/test.sh           # coverage + report
-uv run pytest tests/path/to/test.py   # single file
 ```
 
-### Frontend (chạy trong `frontend/` hoặc project root)
+### Frontend
 
 ```bash
-bun run lint             # biome check --write --unsafe
-bun run build            # tsc + vite build
-bun run test             # Playwright e2e
-bun run test:ui          # Playwright UI mode
-bun run generate-client  # Tái tạo src/client/ từ openapi.json
+cd frontend
+npm install
+npm run build
+npm run dev
 ```
 
-### Regenerate API client
-
-Sau khi thay đổi backend routes:
+If using Bun:
 
 ```bash
-bash scripts/generate-client.sh
+bun install
+bun run dev
 ```
 
-`src/client/` được generate bởi `@hey-api/openapi-ts` từ `frontend/openapi.json` — **không sửa tay**.
+## Environment Variables
 
-### Pre-commit / Linting
+Core backend variables:
 
-[prek](https://prek.j178.dev/) được cấu hình trong `.pre-commit-config.yaml`:
+```env
+ENVIRONMENT=local
+PROJECT_NAME="SmartTraffic AI"
+SECRET_KEY=change-this-secret
+FIRST_SUPERUSER=admin@example.com
+FIRST_SUPERUSER_PASSWORD=change-this-password
+BACKEND_CORS_ORIGINS=http://localhost,http://localhost:5173,http://127.0.0.1:5173
+```
+
+Database variables:
+
+```env
+POSTGRES_SERVER=localhost
+POSTGRES_PORT=5432
+POSTGRES_DB=alpr_db
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=change-this-password
+```
+
+Railway may provide:
+
+```env
+DATABASE_URL=postgresql://...
+```
+
+Optional AI startup variables:
+
+```env
+ENABLE_AI_STARTUP=False
+CAMERA_SOURCE=
+VEHICLE_CONFIDENCE_THRESHOLD=0.25
+PLATE_CONFIDENCE_THRESHOLD=0.25
+```
+
+## Production Deployment
+
+### Frontend on Vercel
+
+1. Connect the repository to Vercel.
+2. Set the frontend root directory to `frontend`.
+3. Configure:
+
+```env
+VITE_API_URL=https://smarttraffic-ai-production.up.railway.app
+```
+
+4. Build command:
 
 ```bash
-# Cài một lần (từ backend/)
-uv run prek install -f
-
-# Chạy thủ công trên tất cả files
-uv run prek run --all-files
+npm run build
 ```
 
-Hooks: ruff check + format, mypy, ty, biome, YAML/TOML validation, auto-SDK regeneration.
+### Backend on Railway
 
----
+1. Deploy the backend service from the repository.
+2. Configure PostgreSQL on Railway.
+3. Set production environment variables:
 
-## ❗ Lỗi thường gặp
-
-| Lỗi | Nguyên nhân | Cách fix |
-|-----|-------------|----------|
-| `Cannot find dockerDesktopLinuxEngine` | Docker Desktop chưa bật | Mở Docker Desktop, chờ icon xanh |
-| `Port 8000 already in use` | Backend đang chạy | `docker compose down` rồi `up` lại |
-| `'uv' is not recognized` | uv chưa cài | Chạy lệnh cài uv ở mục Backend bên trên |
-| `'fastapi' is not recognized` | Chạy thiếu `uv run` | Dùng `uv run fastapi dev app/main.py` |
-| `No module named 'cv2'` | Thiếu OpenCV | `uv pip install opencv-python-headless` |
-| `POSTGRES_PASSWORD not set` | Thiếu file .env | Tạo file `.env` theo mẫu trên |
-| `connection refused` khi kết nối DB | PostgreSQL chưa chạy | `docker compose up db` trước |
-| Frontend trắng / không load API | CORS sai URL | Kiểm tra `BACKEND_CORS_ORIGINS` trong `.env` |
-
----
-
-## 🛑 Tắt dự án
-
-```bash
-docker compose down        # dừng tất cả container
-# Nếu đang chạy local: Ctrl + C
+```env
+ENVIRONMENT=production
+PROJECT_NAME="SmartTraffic AI"
+SECRET_KEY=<secure-value>
+FIRST_SUPERUSER=<admin-email>
+FIRST_SUPERUSER_PASSWORD=<secure-password>
+DATABASE_URL=<railway-postgres-url>
+BACKEND_CORS_ORIGINS=https://smarttraffic-ai-frontend.vercel.app
+ENABLE_AI_STARTUP=False
 ```
 
----
+4. For a production camera source, set:
 
-## 👥 Thông tin dự án
+```env
+ENABLE_AI_STARTUP=True
+CAMERA_SOURCE=<rtsp-or-http-camera-url>
+```
 
-- **GitHub:** https://github.com/lytrungnam/smarttraffic-ai
-- **Thành viên:** Nguyễn Tấn Mỹ, Lý Trung Nam
-- **Tài khoản admin mặc định:** `admin@alpr.com` / `12345678`
+## API Documentation
 
-Terminal 1 — backend:
-  cd "C:\Users\HP VICTUS\Downloads\smarttraffic-ai\smarttraffic-ai\backend"
-  uv run fastapi dev app/main.py
+- Production Swagger UI: https://smarttraffic-ai-production.up.railway.app/docs
+- Local Swagger UI: http://localhost:8000/docs
+- Railway healthcheck: https://smarttraffic-ai-production.up.railway.app/railway-health
 
-  Terminal 2 — ngrok (mở CMD mới):
-  py "C:\Users\HP VICTUS\Downloads\smarttraffic-ai\smarttraffic-ai\ngrok_start.py"
+Important API groups:
 
+- `/api/v1/login`
+- `/api/v1/users`
+- `/api/v1/detections`
+- `/api/v1/analytics`
+- `/api/v1/subscriptions`
+- `/api/v1/ws/detections`
+
+## Repository Structure
+
+```text
+smarttraffic-ai/
+  backend/
+    app/
+      ai/          YOLO and OCR modules
+      api/         FastAPI route modules
+      core/        config, database, security
+      models/      SQLModel tables
+      services/    detection, analytics, history, websocket services
+  frontend/
+    src/
+      components/  React UI components
+      routes/      TanStack Router pages
+      services/    API service wrappers
+      client/      generated API client
+```
+
+## Future Roadmap
+
+- Real payment gateway integration.
+- Admin subscription management.
+- Multi-camera tenant management.
+- Better role-based access control.
+- Model training documentation and dataset versioning.
+- Automated evaluation reports for vehicle and plate models.
+- Production-grade alerting for violations and realtime events.
+- Cloud object storage for evidence images.
+- CI/CD checks for backend, frontend, and database migrations.
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE).
