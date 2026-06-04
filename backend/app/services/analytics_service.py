@@ -6,6 +6,10 @@ from sqlmodel import Session, select
 from app.models.camera import Camera
 from app.models.detection import Detection
 from app.services.detection_service import serialize_detection
+from app.services.vehicle_classes import (
+    TRAFFIC_VEHICLE_CLASSES,
+    normalize_vehicle_class,
+)
 
 
 def get_detection_summary(session: Session):
@@ -44,10 +48,11 @@ def get_detection_summary(session: Session):
         )
     ).one()
 
-    vehicle_type_counts = {
-        vehicle_type or "unknown": count
-        for vehicle_type, count in vehicle_type_rows
-    }
+    vehicle_type_counts = dict.fromkeys(TRAFFIC_VEHICLE_CLASSES, 0)
+    for vehicle_type, count in vehicle_type_rows:
+        normalized_type = normalize_vehicle_class(vehicle_type)
+        if normalized_type:
+            vehicle_type_counts[normalized_type] += count
 
     online_camera_count = session.exec(
         select(func.count(Camera.id)).where(Camera.is_active == True)  # noqa: E712

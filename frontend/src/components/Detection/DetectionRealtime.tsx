@@ -4,6 +4,7 @@ import { Activity, Clock3, Radio, Wifi } from "lucide-react"
 
 import { useCallback, useEffect, useState } from "react"
 
+import { getVehicleClassLabel } from "@/constants/vehicleClasses"
 import { useWebSocket } from "@/hooks/useWebSocket"
 import type {
   DetectionItem,
@@ -136,7 +137,7 @@ export default function DetectionRealtime() {
 
                       <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
                         <span className="font-semibold text-zinc-300">
-                          {item.vehicle_type || "unknown"}
+                          {getVehicleClassLabel(item.vehicle_type)}
                         </span>
                         <span className="text-zinc-600">•</span>
                         <span className="text-zinc-400">

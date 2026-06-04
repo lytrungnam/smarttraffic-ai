@@ -1,22 +1,13 @@
 import { useQuery } from "@tanstack/react-query"
-import { Activity, Bike, Bus, Car, Truck } from "lucide-react"
+import { Activity } from "lucide-react"
 
+import {
+  TRAFFIC_VEHICLE_CLASSES,
+  VEHICLE_CLASS_COLORS,
+  VEHICLE_CLASS_ICONS,
+  VEHICLE_CLASS_LABELS,
+} from "@/constants/vehicleClasses"
 import { getAnalyticsSummary } from "@/services/analyticsService"
-
-const ICON_MAP: Record<string, React.ElementType> = {
-  car: Car,
-  motorbike: Bike,
-  truck: Truck,
-  bus: Bus,
-}
-
-const COLOR_MAP: Record<string, string> = {
-  car: "#06b6d4",
-  motorbike: "#3b82f6",
-  truck: "#8b5cf6",
-  bus: "#f59e0b",
-  unknown: "#f43f5e",
-}
 
 export default function VehicleChart() {
   const { data, isLoading } = useQuery({
@@ -28,12 +19,13 @@ export default function VehicleChart() {
   const counts = data?.vehicle_type_counts ?? {}
   const total = data?.total_vehicle_count ?? 0
 
-  const vehicleItems = Object.entries(counts).map(([name, count]) => ({
-    name,
-    count,
-    value: total > 0 ? Math.round((count / total) * 100) : 0,
-    Icon: ICON_MAP[name] ?? Activity,
-    color: COLOR_MAP[name] ?? "#71717a",
+  const vehicleItems = TRAFFIC_VEHICLE_CLASSES.map((name) => ({
+    name: VEHICLE_CLASS_LABELS[name],
+    key: name,
+    count: counts[name] ?? 0,
+    value: total > 0 ? Math.round(((counts[name] ?? 0) / total) * 100) : 0,
+    Icon: VEHICLE_CLASS_ICONS[name],
+    color: VEHICLE_CLASS_COLORS[name],
   }))
 
   return (
@@ -90,15 +82,11 @@ export default function VehicleChart() {
         {/* VEHICLE TYPE CARDS */}
         {isLoading ? (
           <p className="text-center text-sm text-zinc-500">Loading...</p>
-        ) : vehicleItems.length === 0 ? (
-          <p className="text-center text-sm text-zinc-500">
-            No detections yet — start the AI engine to see data
-          </p>
         ) : (
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             {vehicleItems.map((item) => (
               <div
-                key={item.name}
+                key={item.key}
                 className="
                   group rounded-3xl border border-white/10
                   bg-zinc-900/60 p-5
@@ -115,7 +103,7 @@ export default function VehicleChart() {
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <h3 className="text-sm font-semibold tracking-tight text-white capitalize">
+                      <h3 className="text-sm font-semibold tracking-tight text-white">
                         {item.name}
                       </h3>
                       <div className="mt-2 flex items-center justify-between gap-3">

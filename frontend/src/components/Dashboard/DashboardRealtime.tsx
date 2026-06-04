@@ -1,5 +1,6 @@
 import { Activity, Car, Clock3, Wifi } from "lucide-react"
 
+import { getVehicleClassLabel } from "@/constants/vehicleClasses"
 import type { DetectionItem } from "@/services/detectionService"
 
 type DetectionStatus = "detected" | "stored" | "monitoring" | "processing"
@@ -45,7 +46,7 @@ const isDetectionStatus = (
 
 function DetectionCard({
   plate_number,
-  vehicle_type = "Motorbike",
+  vehicle_type = "unclassified",
   location = "Smart Camera",
   created_at = "Realtime",
   confidence = 0,
@@ -129,7 +130,7 @@ function DetectionCard({
                   text-zinc-300
                 "
               >
-                {vehicle_type}
+                {getVehicleClassLabel(vehicle_type)}
               </span>
 
               <span className="text-zinc-600">•</span>

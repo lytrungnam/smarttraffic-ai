@@ -1,5 +1,6 @@
 // components/Analytics/AnalyticsOverview.tsx
 
+import { useQuery } from "@tanstack/react-query"
 import { Activity, AlertTriangle, Car, Database, Radar } from "lucide-react"
 import {
   Area,
@@ -14,19 +15,12 @@ import {
   YAxis,
 } from "recharts"
 
-const trafficData = [
-  { time: "stored", vehicles: 0 },
-  { time: "today", vehicles: 0 },
-]
-
-const vehicleTypes = [
-  { name: "car", value: 0 },
-  { name: "motorbike", value: 0 },
-  { name: "truck", value: 0 },
-  { name: "unknown", value: 0 },
-]
-
-const COLORS = ["#06b6d4", "#3b82f6", "#8b5cf6", "#f43f5e"]
+import {
+  TRAFFIC_VEHICLE_CLASSES,
+  VEHICLE_CLASS_COLORS,
+  VEHICLE_CLASS_LABELS,
+} from "@/constants/vehicleClasses"
+import { getAnalyticsSummary } from "@/services/analyticsService"
 
 const stats = [
   {
@@ -59,6 +53,28 @@ const stats = [
 ]
 
 export default function AnalyticsOverview() {
+  const { data } = useQuery({
+    queryKey: ["analytics-summary"],
+    queryFn: getAnalyticsSummary,
+    refetchInterval: 5000,
+  })
+
+  const total = data?.total_vehicle_count ?? 0
+  const vehicleTypes = TRAFFIC_VEHICLE_CLASSES.map((vehicleClass) => {
+    const count = data?.vehicle_type_counts[vehicleClass] ?? 0
+    return {
+      name: VEHICLE_CLASS_LABELS[vehicleClass],
+      count,
+      value: total > 0 ? Math.round((count / total) * 100) : 0,
+      color: VEHICLE_CLASS_COLORS[vehicleClass],
+    }
+  })
+
+  const trafficSummary = [
+    { time: "stored", vehicles: data?.total_detections ?? 0 },
+    { time: "today", vehicles: data?.detections_today ?? 0 },
+  ]
+
   return (
     <div className="min-h-screen bg-black p-6 text-white">
       {/* HEADER */}
@@ -334,7 +350,7 @@ export default function AnalyticsOverview() {
           {/* CHART */}
           <div className="h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={trafficData}>
+              <AreaChart data={trafficSummary}>
                 <defs>
                   <linearGradient
                     id="trafficGradient"
@@ -435,14 +451,14 @@ export default function AnalyticsOverview() {
               <PieChart>
                 <Pie
                   data={vehicleTypes}
-                  dataKey="value"
+                  dataKey="count"
                   nameKey="name"
                   innerRadius={70}
                   outerRadius={110}
                   paddingAngle={5}
                 >
-                  {vehicleTypes.map((_, index) => (
-                    <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                  {vehicleTypes.map((item) => (
+                    <Cell key={item.name} fill={item.color} />
                   ))}
                 </Pie>
 
@@ -453,7 +469,7 @@ export default function AnalyticsOverview() {
 
           {/* LEGEND */}
           <div className="mt-6 space-y-4">
-            {vehicleTypes.map((item, index) => (
+            {vehicleTypes.map((item) => (
               <div
                 key={item.name}
                 className="
@@ -475,7 +491,7 @@ export default function AnalyticsOverview() {
                         rounded-full
                       "
                     style={{
-                      backgroundColor: COLORS[index % COLORS.length],
+                      backgroundColor: item.color,
                     }}
                   />
 

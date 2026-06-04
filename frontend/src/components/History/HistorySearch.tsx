@@ -2,6 +2,11 @@
 
 import { Car, Clock3, ScanSearch, Search, ShieldAlert, X } from "lucide-react"
 
+import {
+  TRAFFIC_VEHICLE_CLASSES,
+  VEHICLE_CLASS_LABELS,
+} from "@/constants/vehicleClasses"
+
 type HistorySearchProps = {
   search: string
   vehicleType: string
@@ -17,21 +22,13 @@ const vehicleTypes = [
     label: "All Vehicles",
     value: "",
   },
+  ...TRAFFIC_VEHICLE_CLASSES.map((vehicleClass) => ({
+    label: VEHICLE_CLASS_LABELS[vehicleClass],
+    value: vehicleClass,
+  })),
   {
-    label: "Car",
-    value: "car",
-  },
-  {
-    label: "Motorbike",
-    value: "motorbike",
-  },
-  {
-    label: "Truck",
-    value: "truck",
-  },
-  {
-    label: "Unknown",
-    value: "unknown",
+    label: "Unclassified",
+    value: "unclassified",
   },
 ]
 

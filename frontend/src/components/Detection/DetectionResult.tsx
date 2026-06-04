@@ -14,6 +14,7 @@ import {
 import { useEffect, useState } from "react"
 
 import EvidencePreviewDialog from "@/components/History/EvidencePreviewDialog"
+import { getVehicleClassLabel } from "@/constants/vehicleClasses"
 import type { DetectionItem } from "@/services/detectionService"
 import { getLatestDetections } from "@/services/detectionService"
 
@@ -190,7 +191,7 @@ export default function DetectionResult() {
 
                         <div className="mt-3 flex flex-wrap items-center gap-3">
                           <span className="text-sm font-semibold text-zinc-300">
-                            {item.vehicle_type || "unknown"}
+                            {getVehicleClassLabel(item.vehicle_type)}
                           </span>
 
                           <span className="text-zinc-600">•</span>

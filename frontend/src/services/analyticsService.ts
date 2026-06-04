@@ -1,5 +1,6 @@
 import axios from "axios"
 
+import { TRAFFIC_VEHICLE_CLASSES } from "@/constants/vehicleClasses"
 import type { DetectionItem } from "./detectionService"
 
 const API_URL = `${import.meta.env.VITE_API_URL ?? "http://localhost:8000"}/api/v1`
@@ -19,5 +20,13 @@ export const getAnalyticsSummary = async () => {
     `${API_URL}/analytics/summary`,
   )
 
-  return response.data
+  return {
+    ...response.data,
+    vehicle_type_counts: Object.fromEntries(
+      TRAFFIC_VEHICLE_CLASSES.map((vehicleClass) => [
+        vehicleClass,
+        response.data.vehicle_type_counts[vehicleClass] ?? 0,
+      ]),
+    ),
+  }
 }

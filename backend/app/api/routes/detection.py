@@ -4,8 +4,8 @@ import time
 from fastapi import APIRouter, File, Query, UploadFile
 from fastapi.responses import StreamingResponse
 
-from app.api.deps import SessionDep
 import app.services.frame_buffer as fb
+from app.api.deps import SessionDep
 from app.models.detection import Detection
 from app.services.detection_service import process_detection, serialize_detection
 from app.services.history_service import get_paginated_history
@@ -60,7 +60,7 @@ async def upload_detection(
 
         detection = Detection(
             plate_number=plate_text,
-            vehicle_type=result.get("vehicle_type", "unknown"),
+            vehicle_type=result.get("vehicle_type", "unclassified"),
             confidence=float(result.get("confidence", 0)),
             image_path=image_path,
             status="detected",

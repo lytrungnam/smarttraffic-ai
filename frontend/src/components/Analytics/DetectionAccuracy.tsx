@@ -1,72 +1,14 @@
-// components/Analytics/DetectionAccuracy.tsx
-
 import {
-  AlertTriangle,
-  Cpu,
-  Radar,
-  ScanSearch,
   ShieldCheck,
 } from "lucide-react"
 
-const metrics = [
-  {
-    title: "Plate Detection Accuracy",
-    value: "Live",
-    status: "Excellent",
-    icon: Radar,
-    color: "cyan",
-  },
-
-  {
-    title: "OCR Recognition Accuracy",
-    value: "97.9%",
-    status: "Stable",
-    icon: ScanSearch,
-    color: "green",
-  },
-
-  {
-    title: "False Positive Rate",
-    value: "1.2%",
-    status: "Low",
-    icon: AlertTriangle,
-    color: "red",
-  },
-
-  {
-    title: "AI Processing Speed",
-    value: "Stream",
-    status: "Realtime",
-    icon: Cpu,
-    color: "yellow",
-  },
-] as const
-
-const colorStyles = {
-  cyan: {
-    icon: "text-cyan-400",
-    badge: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
-    progress: "from-cyan-500 to-blue-500",
-  },
-
-  green: {
-    icon: "text-emerald-400",
-    badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-    progress: "from-emerald-500 to-green-500",
-  },
-
-  red: {
-    icon: "text-red-400",
-    badge: "bg-red-500/10 text-red-400 border-red-500/20",
-    progress: "from-red-500 to-orange-500",
-  },
-
-  yellow: {
-    icon: "text-yellow-400",
-    badge: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
-    progress: "from-yellow-500 to-orange-500",
-  },
-}
+import {
+  MODEL_EVALUATION_VALUES,
+  TRAFFIC_VEHICLE_CLASSES,
+  VEHICLE_CLASS_COLORS,
+  VEHICLE_CLASS_ICONS,
+  VEHICLE_CLASS_LABELS,
+} from "@/constants/vehicleClasses"
 
 export default function DetectionAccuracy() {
   return (
@@ -108,7 +50,7 @@ export default function DetectionAccuracy() {
               text-white
             "
           >
-            AI Detection Metrics
+            AI Model Evaluation
           </h2>
 
           <p
@@ -119,7 +61,7 @@ export default function DetectionAccuracy() {
               text-zinc-400
             "
           >
-            Realtime deep learning performance analysis
+            Normalized confusion-matrix diagonal values from the trained vehicle model.
           </p>
         </div>
 
@@ -148,7 +90,7 @@ export default function DetectionAccuracy() {
               text-green-400
             "
           >
-            AI Stable
+            Offline validation
           </span>
         </div>
       </div>
@@ -162,14 +104,14 @@ export default function DetectionAccuracy() {
           md:grid-cols-2
         "
       >
-        {metrics.map((metric) => {
-          const Icon = metric.icon
-
-          const styles = colorStyles[metric.color]
+        {TRAFFIC_VEHICLE_CLASSES.map((vehicleClass) => {
+          const Icon = VEHICLE_CLASS_ICONS[vehicleClass]
+          const value = MODEL_EVALUATION_VALUES[vehicleClass]
+          const color = VEHICLE_CLASS_COLORS[vehicleClass]
 
           return (
             <div
-              key={metric.title}
+              key={vehicleClass}
               className="
                 relative overflow-hidden
 
@@ -221,7 +163,7 @@ export default function DetectionAccuracy() {
                         text-zinc-400
                       "
                     >
-                      {metric.title}
+                        {VEHICLE_CLASS_LABELS[vehicleClass]}
                     </p>
 
                     {/* VALUE */}
@@ -236,7 +178,7 @@ export default function DetectionAccuracy() {
                         text-white
                       "
                     >
-                      {metric.value}
+                      {value.toFixed(2)}
                     </h2>
 
                     {/* STATUS */}
@@ -254,27 +196,21 @@ export default function DetectionAccuracy() {
                           text-xs
                           font-semibold
 
-                          ${styles.badge}
                         `}
+                        style={{
+                          borderColor: `${color}40`,
+                          backgroundColor: `${color}16`,
+                          color,
+                        }}
                       >
-                        {metric.status}
+                        Model class
                       </span>
                     </div>
                   </div>
 
                   {/* ICON */}
-                  <div
-                    className="
-                      rounded-2xl
-
-                      border border-white/10
-
-                      bg-zinc-800
-
-                      p-4
-                    "
-                  >
-                    <Icon className={`h-5 w-5 ${styles.icon}`} />
+                  <div className="rounded-2xl border border-white/10 bg-zinc-800 p-4">
+                    <Icon className="h-5 w-5" style={{ color }} />
                   </div>
                 </div>
 
@@ -293,17 +229,10 @@ export default function DetectionAccuracy() {
                     "
                   >
                     <div
-                      className={`
-                        h-full
-
-                        rounded-full
-
-                        bg-gradient-to-r
-
-                        ${styles.progress}
-                      `}
+                      className="h-full rounded-full"
                       style={{
-                        width: metric.value,
+                        width: `${Math.round(value * 100)}%`,
+                        backgroundColor: color,
                       }}
                     />
                   </div>

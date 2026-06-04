@@ -8,6 +8,7 @@ import {
 } from "lucide-react"
 import { useEffect, useState } from "react"
 
+import { getVehicleClassLabel } from "@/constants/vehicleClasses"
 import type { DetectionItem } from "@/services/detectionService"
 import {
   getEvidenceImageUrl,
@@ -156,7 +157,7 @@ export default function DetectionPreview() {
                         {item.plate_number}
                       </h3>
                       <p className="mt-2 text-sm text-zinc-400">
-                        {item.vehicle_type || "unknown"}
+                        {getVehicleClassLabel(item.vehicle_type)}
                       </p>
                     </div>
 

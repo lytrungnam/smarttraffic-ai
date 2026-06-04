@@ -11,6 +11,8 @@ import {
 } from "lucide-react"
 import { useRef, useState } from "react"
 
+import { getVehicleClassLabel } from "@/constants/vehicleClasses"
+
 const API_URL = `${import.meta.env.VITE_API_URL ?? "http://localhost:8000"}/api/v1`
 
 type UploadResult = {
@@ -229,7 +231,7 @@ export default function DetectionUpload() {
                 <div>
                   <p className="text-lg font-semibold text-white">{r.plate_number}</p>
                   <p className="mt-1 text-sm text-zinc-400">
-                    {r.vehicle_type || "unknown"} • {r.confidence ?? 0}%
+                    {getVehicleClassLabel(r.vehicle_type)} • {r.confidence ?? 0}%
                   </p>
                 </div>
                 <div className="inline-flex items-center gap-2 rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1.5">

@@ -83,12 +83,18 @@ function AnalyticsPage() {
           </DashboardSection>
         </section>
 
+        <div className="rounded-3xl border border-cyan-500/20 bg-cyan-500/10 p-5 text-sm leading-6 text-cyan-100">
+          Traffic distribution is calculated from stored detection records.
+          Model evaluation metrics are offline validation results from the
+          trained YOLO vehicle model.
+        </div>
+
         {/* ACCURACY */}
         <DashboardSection
-          title="AI Detection Performance"
+          title="AI Model Evaluation"
           description="
-            Real-time accuracy evaluation
-            and model confidence metrics
+            Offline validation values from
+            the trained vehicle model
           "
           icon={Activity}
         >

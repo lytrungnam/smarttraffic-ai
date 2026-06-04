@@ -21,4 +21,4 @@ def get_vehicle_type_from_plate(
 
             return vehicle["label"]
 
-    return "unknown"
+    return "unclassified"

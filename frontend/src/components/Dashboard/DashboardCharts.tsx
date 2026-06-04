@@ -13,9 +13,12 @@ import {
   YAxis,
 } from "recharts"
 
+import {
+  TRAFFIC_VEHICLE_CLASSES,
+  VEHICLE_CLASS_COLORS,
+  VEHICLE_CLASS_LABELS,
+} from "@/constants/vehicleClasses"
 import type { AnalyticsSummary } from "@/services/analyticsService"
-
-const chartColors = ["#06b6d4", "#3b82f6", "#8b5cf6", "#22c55e"]
 
 function ChartCard({
   title,
@@ -84,15 +87,16 @@ export default function DashboardCharts({ summary }: DashboardChartsProps) {
     },
   ]
 
-  const vehicleData = Object.entries(summary?.vehicle_type_counts ?? {}).map(
-    ([name, value], index) => ({
-      name,
-      value,
-      color: chartColors[index % chartColors.length],
-    }),
-  )
-
   const totalVehicles = summary?.total_vehicle_count ?? 0
+  const vehicleData = TRAFFIC_VEHICLE_CLASSES.map((vehicleClass) => {
+    const count = summary?.vehicle_type_counts[vehicleClass] ?? 0
+    return {
+      name: VEHICLE_CLASS_LABELS[vehicleClass],
+      value: totalVehicles > 0 ? Math.round((count / totalVehicles) * 100) : 0,
+      count,
+      color: VEHICLE_CLASS_COLORS[vehicleClass],
+    }
+  })
 
   return (
     <section
@@ -181,7 +185,7 @@ export default function DashboardCharts({ summary }: DashboardChartsProps) {
             <PieChart>
               <Pie
                 data={vehicleData}
-                dataKey="value"
+                dataKey="count"
                 innerRadius={70}
                 outerRadius={100}
                 paddingAngle={4}

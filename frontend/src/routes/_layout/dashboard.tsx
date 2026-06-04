@@ -14,6 +14,7 @@ import {
   type AnalyticsSummary,
   getAnalyticsSummary,
 } from "@/services/analyticsService"
+import { normalizeVehicleClass } from "@/constants/vehicleClasses"
 import type {
   DetectionItem,
   DetectionRealtimePayload,
@@ -101,7 +102,8 @@ function DashboardPage() {
           const nextVehicleCounts = { ...current.vehicle_type_counts }
 
           for (const detection of normalized.plates) {
-            const vehicleType = detection.vehicle_type || "unknown"
+            const vehicleType = normalizeVehicleClass(detection.vehicle_type)
+            if (!vehicleType) continue
             nextVehicleCounts[vehicleType] =
               (nextVehicleCounts[vehicleType] ?? 0) + 1
           }
@@ -118,7 +120,10 @@ function DashboardPage() {
             ].slice(0, 5),
             vehicle_type_counts: nextVehicleCounts,
             total_vehicle_count:
-              current.total_vehicle_count + normalized.plates.length,
+              current.total_vehicle_count +
+              normalized.plates.filter((detection) =>
+                normalizeVehicleClass(detection.vehicle_type),
+              ).length,
           }
         })
       }
