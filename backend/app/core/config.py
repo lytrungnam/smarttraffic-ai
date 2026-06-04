@@ -113,6 +113,7 @@ class Settings(BaseSettings):
     PLATE_CONFIDENCE_THRESHOLD: float = 0.25
     DEBUG_SAVE_PLATE_CROPS: bool = False
     OCR_ENGINE: Literal["easyocr", "paddleocr", "hybrid"] = "hybrid"
+    MAX_VIDEO_UPLOAD_MB: int = 100
 
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":

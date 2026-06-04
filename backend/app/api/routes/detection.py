@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import time
 from pathlib import Path
 
@@ -8,6 +9,7 @@ from fastapi.responses import StreamingResponse
 
 import app.services.frame_buffer as fb
 from app.api.deps import SessionDep
+from app.core.config import settings
 from app.models.detection import Detection
 from app.services.detection_service import process_detection, serialize_detection
 from app.services.history_service import get_paginated_history
@@ -18,6 +20,9 @@ router = APIRouter(
     tags=["detections"],
 )
 
+logger = logging.getLogger(__name__)
+logger.info("[UPLOAD] MAX_VIDEO_UPLOAD_MB=%s", settings.MAX_VIDEO_UPLOAD_MB)
+
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png"}
 IMAGE_CONTENT_TYPES = {"image/jpeg", "image/png"}
 VIDEO_EXTENSIONS = {".mp4", ".avi", ".mov"}
@@ -27,7 +32,6 @@ VIDEO_CONTENT_TYPES = {
     "video/quicktime",
     "video/x-msvideo",
 }
-MAX_VIDEO_UPLOAD_BYTES = 25 * 1024 * 1024
 VIDEO_SAMPLE_EVERY_N_FRAMES = 10
 VIDEO_MAX_SAMPLED_FRAMES = 30
 VIDEO_MAX_SAVED_DETECTIONS = 10
@@ -135,10 +139,15 @@ async def upload_detection(
     upload_kind = _get_upload_kind(file)
     contents = await file.read()
 
-    if upload_kind == "video" and len(contents) > MAX_VIDEO_UPLOAD_BYTES:
+    video_size_mb = len(contents) / (1024 * 1024)
+
+    if upload_kind == "video" and video_size_mb > settings.MAX_VIDEO_UPLOAD_MB:
         raise HTTPException(
             status_code=413,
-            detail="Video upload is limited to 25MB for the production demo.",
+            detail=(
+                "Video upload exceeds the configured limit of "
+                f"{settings.MAX_VIDEO_UPLOAD_MB}MB."
+            ),
         )
 
     if upload_kind == "video":
