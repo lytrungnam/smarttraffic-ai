@@ -5,7 +5,6 @@ import {
   BarChart3,
   Camera,
   Database,
-  ShieldCheck,
   Table2,
   Wifi,
 } from "lucide-react"
