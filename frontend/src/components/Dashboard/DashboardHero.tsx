@@ -57,18 +57,18 @@ function HeroStatCard({
       `
       }
     >
-      <div className="flex items-center justify-between gap-3">
-        <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1 space-y-2">
+          <p className="truncate text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
             {title}
           </p>
-          <h3 className="text-3xl font-semibold text-white">{value}</h3>
+          <h3 className="text-2xl font-semibold text-white sm:text-3xl">{value}</h3>
         </div>
 
         <div
           className={
             `
-            inline-flex h-11 w-11 items-center justify-center rounded-2xl
+            inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl
             bg-black/40
             ${styles.icon}
           `
@@ -78,9 +78,9 @@ function HeroStatCard({
         </div>
       </div>
 
-      <div className="mt-4 flex items-center justify-between gap-4 text-xs text-zinc-400">
-        <span>{status}</span>
-        <span className="rounded-full bg-white/5 px-3 py-1 text-zinc-300">Updated</span>
+      <div className="mt-4 flex flex-col items-start justify-between gap-2 text-xs text-zinc-400 sm:flex-row sm:items-center">
+        <span className="truncate">{status}</span>
+        <span className="whitespace-nowrap rounded-full bg-white/5 px-2 py-1 text-zinc-300\">Updated</span>
       </div>
     </div>
   )
@@ -129,35 +129,35 @@ export default function DashboardHero({
   return (
     <section className="relative overflow-hidden border-b border-white/10 bg-slate-950/90">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.16),transparent_28%)]" />
-      <div className="relative px-6 py-10 lg:px-10">
-        <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
-          <div className="max-w-3xl space-y-6">
-            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
+      <div className="relative px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
+        <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-start lg:gap-8">
+          <div className="max-w-3xl space-y-5 sm:space-y-6">
+            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1.5 sm:px-4 sm:py-2 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
               <ShieldCheck className="h-4 w-4" />
               SmartTraffic AI
             </div>
             <div>
-              <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+              <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl lg:text-4xl">
                 Traffic Operations Monitoring
               </h1>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-zinc-300">
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-300 sm:mt-4 sm:text-base">
                 Centralized view for live vehicle detections, camera health, and AI traffic analytics.
               </p>
             </div>
           </div>
-          <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-5 shadow-xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-zinc-400">
+          <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-4 shadow-xl sm:p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400 sm:text-sm">
               Platform status
             </p>
-            <div className="mt-4 flex flex-wrap gap-3 text-sm">
-              <span className="rounded-full bg-emerald-500/10 px-3 py-2 text-emerald-300">Live</span>
-              <span className="rounded-full bg-cyan-500/10 px-3 py-2 text-cyan-300">AI Driven</span>
-              <span className="rounded-full bg-violet-500/10 px-3 py-2 text-violet-300">Monitoring</span>
+            <div className="mt-3 flex flex-wrap gap-2 text-xs sm:gap-3 sm:text-sm">
+              <span className="rounded-full bg-emerald-500/10 px-2.5 py-1.5 text-emerald-300 sm:px-3 sm:py-2">Live</span>
+              <span className="rounded-full bg-cyan-500/10 px-2.5 py-1.5 text-cyan-300 sm:px-3 sm:py-2">AI Driven</span>
+              <span className="rounded-full bg-violet-500/10 px-2.5 py-1.5 text-violet-300 sm:px-3 sm:py-2">Monitoring</span>
             </div>
           </div>
         </div>
 
-        <div className="mt-10 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-8 grid gap-4 sm:mt-10 sm:gap-5 sm:grid-cols-2 xl:grid-cols-4 xl:gap-6">
           {heroStats.map((stat) => (
             <HeroStatCard key={stat.title} {...stat} />
           ))}
