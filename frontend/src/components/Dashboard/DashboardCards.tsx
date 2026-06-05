@@ -70,20 +70,20 @@ function DashboardCard({
       }
     >
       <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
             {title}
           </p>
-          <h2 className="mt-3 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+          <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white">
             {value}
           </h2>
-          <p className="mt-3 truncate text-sm text-zinc-400">{growth}</p>
+          <p className="mt-3 text-sm text-zinc-400">{growth}</p>
         </div>
 
         <div
           className={
             `
-            inline-flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-3xl
+            inline-flex h-12 w-12 items-center justify-center rounded-3xl
             bg-white/5
             ${styles.icon}
           `
@@ -93,13 +93,13 @@ function DashboardCard({
         </div>
       </div>
 
-      <div className="mt-6 flex flex-col items-start justify-between gap-3 text-sm text-zinc-300 sm:flex-row sm:items-center">
+      <div className="mt-6 flex items-center justify-between gap-3 text-sm text-zinc-300">
         <span className={`rounded-full px-3 py-1 font-semibold ${styles.badge}`}>
           {status}
         </span>
         <div className="flex items-center gap-2 text-emerald-400">
-          <TrendingUp className="h-4 w-4 flex-shrink-0" />
-          <span className="whitespace-nowrap">Updating</span>
+          <TrendingUp className="h-4 w-4" />
+          <span>Updating</span>
         </div>
       </div>
     </div>
@@ -154,7 +154,7 @@ export default function DashboardCards({
   ]
 
   return (
-    <section className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 xl:grid-cols-4 xl:gap-6\">
+    <section className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
       {cards.map((card) => (
         <DashboardCard key={card.title} {...card} />
       ))}

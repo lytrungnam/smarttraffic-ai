@@ -242,24 +242,28 @@ export default function DashboardCharts({ summary }: DashboardChartsProps) {
         </div>
 
         {/* LEGEND */}
-        <div className="mt-8 space-y-2">
+        <div className="mt-8 space-y-3">
           {vehicleData.map((item) => (
             <div
               key={item.name}
               className="
-                flex items-center justify-between gap-3
+                min-w-0
+                flex flex-col gap-4
                 rounded-2xl
                 border border-white/10
                 bg-zinc-900/40
-                px-4 py-2.5
+                px-4 py-3
                 transition-all duration-300
                 hover:border-white/20
                 hover:bg-zinc-900/60
+                sm:flex-row
+                sm:items-center
+                sm:justify-between
               "
             >
-              <div className="flex min-w-0 items-center gap-2">
+              <div className="flex items-center gap-3">
                 <div
-                  className="h-2.5 w-2.5 flex-shrink-0 rounded-full"
+                  className="h-3 w-3 rounded-full"
                   style={{
                     backgroundColor: item.color,
                   }}
@@ -267,7 +271,6 @@ export default function DashboardCharts({ summary }: DashboardChartsProps) {
 
                 <span
                   className="
-                    truncate
                     text-sm
                     font-medium
                     tracking-wide
@@ -280,7 +283,6 @@ export default function DashboardCharts({ summary }: DashboardChartsProps) {
 
               <span
                 className="
-                  flex-shrink-0
                   text-sm
                   font-semibold
                   tracking-wide

@@ -22,6 +22,9 @@ export default function DashboardSection({
   return (
     <section
       className={`
+        h-full
+        overflow-hidden
+
         rounded-3xl
         border border-white/10
         bg-black/40

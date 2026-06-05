@@ -215,8 +215,8 @@ function DashboardPage() {
     >
       <DashboardHero summary={summary} isLoading={isSummaryLoading} />
 
-      <main className="grid gap-6 overflow-x-hidden px-4 py-8 sm:px-6 lg:px-10">
-        <div className="grid gap-6 xl:grid-cols-[1.5fr_0.9fr] xl:gap-8">
+      <main className="grid gap-6 px-6 py-8 lg:px-10">
+        <div className="grid gap-6 xl:grid-cols-[1.5fr_0.9fr]">
           <DashboardCards summary={summary} isLoading={isSummaryLoading} />
 
           <section
@@ -288,15 +288,13 @@ function DashboardPage() {
           </section>
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr] xl:gap-8">
+        <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
           <DashboardSection
             title="Realtime Vehicle Detection"
             description="Live AI traffic monitoring"
             icon={Activity}
           >
-            <div className="min-h-0 overflow-hidden">
-              <DashboardRealtime realtimeData={realtimeData} />
-            </div>
+            <DashboardRealtime realtimeData={realtimeData} />
           </DashboardSection>
 
           <DashboardSection
@@ -304,12 +302,10 @@ function DashboardPage() {
             description="Latest vehicle detections"
             icon={Table2}
           >
-            <div className="min-h-0 overflow-x-auto">
-              <DashboardTable
-                records={summary?.latest_detections ?? []}
-                isLoading={isSummaryLoading}
-              />
-            </div>
+            <DashboardTable
+              records={summary?.latest_detections ?? []}
+              isLoading={isSummaryLoading}
+            />
           </DashboardSection>
         </div>
 
