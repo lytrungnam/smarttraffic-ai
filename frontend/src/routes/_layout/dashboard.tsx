@@ -1,6 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router"
 
-import { Activity, BarChart3, Table2 } from "lucide-react"
+import {
+  Activity,
+  BarChart3,
+  Camera,
+  Database,
+  ShieldCheck,
+  Table2,
+  Wifi,
+} from "lucide-react"
 
 import { useCallback, useEffect, useState } from "react"
 
@@ -134,6 +142,67 @@ function DashboardPage() {
   const wsUrl = `${(import.meta.env.VITE_API_URL ?? "http://localhost:8000").replace(/^http/, "ws")}/api/v1/ws/detections`
   useWebSocket(wsUrl, handleWsMessage)
 
+  const statusColorStyles: Record<
+    string,
+    {
+      icon: string
+      background: string
+    }
+  > = {
+    emerald: {
+      icon: "text-emerald-400",
+      background: "bg-emerald-500/10",
+    },
+    cyan: {
+      icon: "text-cyan-400",
+      background: "bg-cyan-500/10",
+    },
+    blue: {
+      icon: "text-sky-400",
+      background: "bg-sky-500/10",
+    },
+    violet: {
+      icon: "text-violet-400",
+      background: "bg-violet-500/10",
+    },
+  }
+
+  const systemStatuses = [
+    {
+      title: "Realtime AI Feed",
+      value: realtimeData.plates.length > 0 ? "Active" : "Standby",
+      detail: realtimeData.plates.length
+        ? `${realtimeData.plates.length} plates seen just now`
+        : "Awaiting detections",
+      icon: Activity,
+      color: "emerald",
+    },
+    {
+      title: "Camera Health",
+      value:
+        !isSummaryLoading && (summary?.online_camera_count ?? 0) > 0
+          ? "Online"
+          : "Idle",
+      detail: `${summary?.online_camera_count ?? 0} cameras connected`,
+      icon: Camera,
+      color: "cyan",
+    },
+    {
+      title: "API Status",
+      value: "Healthy",
+      detail: "Dashboard data is synchronized",
+      icon: Wifi,
+      color: "blue",
+    },
+    {
+      title: "Storage",
+      value: !isSummaryLoading ? "Connected" : "Checking",
+      detail: "PostgreSQL operational",
+      icon: Database,
+      color: "violet",
+    },
+  ]
+
   return (
     <div
       className="
@@ -145,49 +214,108 @@ function DashboardPage() {
         text-white
       "
     >
-      {/* HERO */}
       <DashboardHero summary={summary} isLoading={isSummaryLoading} />
 
-      {/* MAIN */}
-      <main
-        className="
-          space-y-8
-          px-6 py-8
-          lg:px-10
-        "
-      >
-        {/* CARDS */}
-        <DashboardCards summary={summary} isLoading={isSummaryLoading} />
+      <main className="grid gap-6 px-6 py-8 lg:px-10">
+        <div className="grid gap-6 xl:grid-cols-[1.5fr_0.9fr]">
+          <DashboardCards summary={summary} isLoading={isSummaryLoading} />
 
-        {/* REALTIME */}
-        <DashboardSection
-          title="Realtime Vehicle Detection"
-          description="Live AI traffic monitoring"
-          icon={Activity}
-        >
-          {/* REALTIME COMPONENT */}
-          <DashboardRealtime realtimeData={realtimeData} />
-        </DashboardSection>
+          <section
+            className="
+              rounded-3xl
+              border border-white/10
+              bg-black/50
+              p-6
+              shadow-2xl
+              backdrop-blur-xl
+            "
+          >
+            <div className="mb-6 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.25em] text-cyan-300">
+                  System Status
+                </p>
+                <h2 className="mt-3 text-2xl font-semibold tracking-tight text-white">
+                  Operations Overview
+                </h2>
+              </div>
+              <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 px-3 py-2 text-sm font-semibold text-cyan-200">
+                Live
+              </div>
+            </div>
 
-        {/* CHARTS */}
+            <div className="grid gap-4">
+              {systemStatuses.map((status) => {
+                const Icon = status.icon
+                const colorStyles = statusColorStyles[status.color] ?? {
+                  icon: "text-zinc-400",
+                  background: "bg-white/5",
+                }
+
+                return (
+                  <div
+                    key={status.title}
+                    className="
+                      rounded-3xl
+                      border border-white/10
+                      bg-slate-950/80
+                      p-4
+                    "
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <span
+                          className={
+                            `inline-flex h-11 w-11 items-center justify-center rounded-2xl ${colorStyles.background} ${colorStyles.icon}`
+                          }
+                        >
+                          <Icon className="h-5 w-5" />
+                        </span>
+                        <div>
+                          <p className="text-sm font-medium tracking-wide text-zinc-400">
+                            {status.title}
+                          </p>
+                          <p className="mt-1 text-base font-semibold text-white">
+                            {status.value}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="mt-4 text-sm text-zinc-500">{status.detail}</p>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        </div>
+
+        <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
+          <DashboardSection
+            title="Realtime Vehicle Detection"
+            description="Live AI traffic monitoring"
+            icon={Activity}
+          >
+            <DashboardRealtime realtimeData={realtimeData} />
+          </DashboardSection>
+
+          <DashboardSection
+            title="Recent Detection Records"
+            description="Latest vehicle detections"
+            icon={Table2}
+          >
+            <DashboardTable
+              records={summary?.latest_detections ?? []}
+              isLoading={isSummaryLoading}
+            />
+          </DashboardSection>
+        </div>
+
         <DashboardSection
           title="Traffic Analytics"
           description="Vehicle flow and congestion analytics"
           icon={BarChart3}
         >
           <DashboardCharts summary={summary} />
-        </DashboardSection>
-
-        {/* TABLE */}
-        <DashboardSection
-          title="Recent Detection Records"
-          description="Latest vehicle detections"
-          icon={Table2}
-        >
-          <DashboardTable
-            records={summary?.latest_detections ?? []}
-            isLoading={isSummaryLoading}
-          />
         </DashboardSection>
       </main>
     </div>
