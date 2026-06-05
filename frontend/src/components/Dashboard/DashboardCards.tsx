@@ -4,7 +4,7 @@ import { Activity, Camera, Car, Database, TrendingUp } from "lucide-react"
 
 import type { AnalyticsSummary } from "@/services/analyticsService"
 
-type CardColor = "cyan" | "green" | "yellow"
+type CardColor = "cyan" | "red" | "green" | "yellow"
 
 type DashboardCardItem = {
   title: string
@@ -18,20 +18,30 @@ type DashboardCardItem = {
 const colorStyles = {
   cyan: {
     icon: "text-cyan-400",
-    border: "border-cyan-500/20",
-    badge: "bg-cyan-500/10 text-cyan-300",
+    glow: "shadow-cyan-500/10",
+    border: "hover:border-cyan-400/20",
+    gradient: "from-cyan-500/20 to-blue-500/10",
+  },
+
+  red: {
+    icon: "text-red-400",
+    glow: "shadow-red-500/10",
+    border: "hover:border-red-400/20",
+    gradient: "from-red-500/20 to-orange-500/10",
   },
 
   green: {
     icon: "text-emerald-400",
-    border: "border-emerald-500/20",
-    badge: "bg-emerald-500/10 text-emerald-300",
+    glow: "shadow-emerald-500/10",
+    border: "hover:border-emerald-400/20",
+    gradient: "from-emerald-500/20 to-green-500/10",
   },
 
   yellow: {
     icon: "text-yellow-400",
-    border: "border-yellow-500/20",
-    badge: "bg-yellow-500/10 text-yellow-300",
+    glow: "shadow-yellow-500/10",
+    border: "hover:border-yellow-400/20",
+    gradient: "from-yellow-500/20 to-amber-500/10",
   },
 }
 
@@ -56,52 +66,134 @@ function DashboardCard({
 
   return (
     <div
-      className={
-        `
+      className={`
+        group relative overflow-hidden
         rounded-3xl
-        border ${styles.border}
-        bg-slate-950/80
+        border border-white/10
+        bg-black/40
+        bg-gradient-to-br ${styles.gradient}
+
         p-5
-        shadow-xl
-        transition duration-300
+
+        backdrop-blur-xl
+        shadow-2xl ${styles.glow}
+
+        transition-all duration-300
         hover:-translate-y-1
-        hover:border-white/20
-      `
-      }
+        hover:shadow-[0_0_40px_rgba(255,255,255,0.04)]
+
+        ${styles.border}
+      `}
     >
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
+      {/* GLOW EFFECT */}
+      <div
+        className="
+          absolute right-0 top-0
+          h-32 w-32
+          bg-white/5
+          blur-3xl
+        "
+      />
+
+      {/* CONTENT */}
+      <div className="relative flex items-start justify-between">
+        {/* LEFT */}
+        <div className="flex-1">
+          {/* TITLE */}
+          <p
+            className="
+              text-xs
+              font-medium
+              tracking-[0.12em]
+              text-zinc-500
+            "
+          >
             {title}
           </p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white">
+
+          {/* VALUE */}
+          <h2
+            className="
+              mt-2
+
+              text-2xl
+              font-semibold
+              tracking-tight
+              leading-none
+
+              text-white
+            "
+          >
             {value}
           </h2>
-          <p className="mt-3 text-sm text-zinc-400">{growth}</p>
+
+          {/* GROWTH */}
+          <div className="mt-3 flex items-center gap-2">
+            <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
+
+            <span
+              className="
+                text-sm
+                font-semibold
+                tracking-wide
+                text-emerald-400
+              "
+            >
+              {growth}
+            </span>
+          </div>
         </div>
 
+        {/* ICON */}
         <div
-          className={
-            `
-            inline-flex h-12 w-12 items-center justify-center rounded-3xl
-            bg-white/5
-            ${styles.icon}
-          `
-          }
+          className="
+            rounded-2xl
+            border border-white/10
+            bg-black/30
+
+            p-3
+
+            backdrop-blur-md
+            transition-transform duration-300
+            group-hover:scale-105
+          "
         >
-          <Icon className="h-6 w-6" />
+          <Icon className={`h-6 w-6 ${styles.icon}`} />
         </div>
       </div>
 
-      <div className="mt-6 flex items-center justify-between gap-3 text-sm text-zinc-300">
-        <span className={`rounded-full px-3 py-1 font-semibold ${styles.badge}`}>
+      {/* STATUS */}
+      <div className="relative mt-4 flex items-center gap-2">
+        <span
+          className="
+            h-2 w-2
+            rounded-full
+            bg-emerald-400
+            animate-pulse
+          "
+        />
+
+        <span
+          className="
+            text-sm
+            font-medium
+            tracking-wide
+            text-zinc-300
+          "
+        >
           {status}
         </span>
-        <div className="flex items-center gap-2 text-emerald-400">
-          <TrendingUp className="h-4 w-4" />
-          <span>Updating</span>
-        </div>
       </div>
+
+      {/* BORDER EFFECT */}
+      <div
+        className="
+          pointer-events-none
+          absolute inset-0
+          rounded-3xl
+          border border-white/5
+        "
+      />
     </div>
   )
 }
@@ -119,42 +211,51 @@ export default function DashboardCards({
     {
       title: "Total Detections",
       value: isLoading ? "..." : String(summary?.total_detections ?? 0),
-      growth: "Stored records",
-      status: "Database",
+      growth: "PostgreSQL",
+      status: "Stored Records",
       icon: Database,
       color: "cyan",
     },
+
     {
       title: "Detections Today",
       value: isLoading ? "..." : String(summary?.detections_today ?? 0),
-      growth: "Realtime feed",
-      status: "Monitoring",
+      growth: "UTC Day",
+      status: "Live Monitoring",
       icon: Activity,
       color: "green",
     },
+
     {
       title: "Unique Plates",
       value: isLoading ? "..." : String(summary?.unique_plates ?? 0),
-      growth: "OCR index",
-      status: "Recognition",
+      growth: "OCR Index",
+      status: "Plate Recognition",
       icon: Car,
       color: "yellow",
     },
+
     {
       title: "Online Cameras",
       value: isLoading ? "..." : String(summary?.online_camera_count ?? 0),
-      growth: "Connected feeds",
+      growth: "AI Detection Loop",
       status:
         !isLoading && (summary?.online_camera_count ?? 0) > 0
-          ? "Active"
-          : "Offline",
+          ? "Camera Feed Active"
+          : "No Cameras Registered",
       icon: Camera,
-      color: "green",
+      color: (summary?.online_camera_count ?? 0) > 0 ? "green" : "yellow",
     },
   ]
 
   return (
-    <section className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+    <section
+      className="
+        grid grid-cols-1 gap-6
+        md:grid-cols-2
+        xl:grid-cols-4
+      "
+    >
       {cards.map((card) => (
         <DashboardCard key={card.title} {...card} />
       ))}
