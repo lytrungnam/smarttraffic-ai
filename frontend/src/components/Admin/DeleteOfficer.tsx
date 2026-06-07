@@ -24,16 +24,12 @@ interface DeleteOfficerProps {
   onSuccess: () => void
 }
 
-const DeleteOfficer = ({
-  id,
-  onSuccess,
-}: DeleteOfficerProps) => {
+const DeleteOfficer = ({ id, onSuccess }: DeleteOfficerProps) => {
   const [isOpen, setIsOpen] = useState(false)
 
   const queryClient = useQueryClient()
 
-  const { showSuccessToast, showErrorToast } =
-    useCustomToast()
+  const { showSuccessToast, showErrorToast } = useCustomToast()
 
   const { handleSubmit } = useForm()
 
@@ -47,9 +43,7 @@ const DeleteOfficer = ({
     mutationFn: deleteOfficer,
 
     onSuccess: () => {
-      showSuccessToast(
-        "Traffic officer account deleted successfully",
-      )
+      showSuccessToast("User account deleted successfully")
 
       setIsOpen(false)
 
@@ -76,8 +70,7 @@ const DeleteOfficer = ({
         onClick={() => setIsOpen(true)}
       >
         <Trash2 className="mr-2 h-4 w-4" />
-
-        Remove Officer
+        Remove User
       </DropdownMenuItem>
 
       {/* MODAL */}
@@ -86,22 +79,15 @@ const DeleteOfficer = ({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-400">
               <ShieldAlert className="h-5 w-5" />
-
-              Delete Traffic Officer
+              Delete User Account
             </DialogTitle>
 
             <DialogDescription>
-              This officer account and all related
-              traffic monitoring records will be{" "}
-              <strong>
-                permanently removed
-              </strong>{" "}
-              from the AI traffic surveillance
-              system.
-
+              This user account and all related traffic monitoring records will
+              be <strong>permanently removed</strong> from the AI traffic
+              surveillance system.
               <br />
               <br />
-
               This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
@@ -109,10 +95,7 @@ const DeleteOfficer = ({
           {/* FOOTER */}
           <DialogFooter className="mt-6">
             <DialogClose asChild>
-              <Button
-                variant="outline"
-                disabled={mutation.isPending}
-              >
+              <Button variant="outline" disabled={mutation.isPending}>
                 Cancel
               </Button>
             </DialogClose>
@@ -123,8 +106,7 @@ const DeleteOfficer = ({
               loading={mutation.isPending}
             >
               <Trash2 className="mr-2 h-4 w-4" />
-
-              Delete Officer
+              Delete User
             </LoadingButton>
           </DialogFooter>
         </form>

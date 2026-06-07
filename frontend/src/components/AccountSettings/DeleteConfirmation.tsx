@@ -22,21 +22,17 @@ import { handleError } from "@/utils"
 const DeleteConfirmation = () => {
   const queryClient = useQueryClient()
 
-  const { showSuccessToast, showErrorToast } =
-    useCustomToast()
+  const { showSuccessToast, showErrorToast } = useCustomToast()
 
   const { handleSubmit } = useForm()
 
   const { logout } = useAuth()
 
   const mutation = useMutation({
-    mutationFn: () =>
-      UsersService.deleteUserMe(),
+    mutationFn: () => UsersService.deleteUserMe(),
 
     onSuccess: () => {
-      showSuccessToast(
-        "Officer account deleted successfully",
-      )
+      showSuccessToast("User account deleted successfully")
 
       logout()
     },
@@ -57,45 +53,28 @@ const DeleteConfirmation = () => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button
-          variant="destructive"
-          className="mt-3"
-        >
-          Delete Officer Account
+        <Button variant="destructive" className="mt-3">
+          Delete User Account
         </Button>
       </DialogTrigger>
 
       <DialogContent>
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-        >
+        <form onSubmit={handleSubmit(onSubmit)}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-400">
               <ShieldAlert className="h-5 w-5" />
-
-              Delete Officer Account
+              Delete User Account
             </DialogTitle>
 
             <DialogDescription>
-              All officer account data,
-              authentication information, and
-              traffic monitoring access will be{" "}
-              <strong>
-                permanently deleted.
-              </strong>
-
+              All user account data, authentication information, and traffic
+              monitoring access will be <strong>permanently deleted.</strong>
               <br />
               <br />
-
-              If you are sure, click{" "}
-              <strong>
-                "Confirm Deletion"
-              </strong>{" "}
-              to continue.
-
+              If you are sure, click <strong>"Confirm Deletion"</strong> to
+              continue.
               <br />
               <br />
-
               This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
@@ -103,10 +82,7 @@ const DeleteConfirmation = () => {
           {/* FOOTER */}
           <DialogFooter className="mt-4">
             <DialogClose asChild>
-              <Button
-                variant="outline"
-                disabled={mutation.isPending}
-              >
+              <Button variant="outline" disabled={mutation.isPending}>
                 Cancel
               </Button>
             </DialogClose>

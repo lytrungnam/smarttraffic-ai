@@ -1,16 +1,10 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 
-import {
-  createFileRoute,
-  redirect,
-} from "@tanstack/react-router"
+import { createFileRoute, redirect } from "@tanstack/react-router"
 
 import { Suspense } from "react"
 
-import {
-  type UserPublic,
-  UsersService,
-} from "@/client"
+import { type UserPublic, UsersService } from "@/client"
 
 import AddUser from "@/components/Admin/AddOfficer"
 
@@ -22,7 +16,7 @@ import { columns } from "@/components/Admin/OfficersTable"
 
 import { DataTable } from "@/components/Common/DataTable"
 
-import PendingUsers from "@/components/Violations/ViolationList"
+import UsersTableSkeleton from "@/components/Violations/UsersTableSkeleton"
 
 import useAuth from "@/hooks/useAuth"
 
@@ -38,14 +32,11 @@ function getUsersQueryOptions() {
   }
 }
 
-export const Route = createFileRoute(
-  "/_layout/admin",
-)({
+export const Route = createFileRoute("/_layout/admin")({
   component: Admin,
 
   beforeLoad: async () => {
-    const user =
-      await UsersService.readUserMe()
+    const user = await UsersService.readUserMe()
 
     if (!user.is_superuser) {
       throw redirect({
@@ -57,44 +48,29 @@ export const Route = createFileRoute(
   head: () => ({
     meta: [
       {
-        title:
-          "Traffic Officer Management - SmartTraffic AI",
+        title: "User Management - SmartTraffic AI",
       },
     ],
   }),
 })
 
 function UsersTableContent() {
-  const { user: currentUser } =
-    useAuth()
+  const { user: currentUser } = useAuth()
 
-  const { data: users } =
-    useSuspenseQuery(
-      getUsersQueryOptions(),
-    )
+  const { data: users } = useSuspenseQuery(getUsersQueryOptions())
 
-  const tableData = users.data.map(
-    (user: UserPublic) => ({
-      ...user,
+  const tableData = users.data.map((user: UserPublic) => ({
+    ...user,
 
-      isCurrentUser:
-        currentUser?.id === user.id,
-    }),
-  )
+    isCurrentUser: currentUser?.id === user.id,
+  }))
 
-  return (
-    <DataTable
-      columns={columns}
-      data={tableData}
-    />
-  )
+  return <DataTable columns={columns} data={tableData} />
 }
 
 function UsersTable() {
   return (
-    <Suspense
-      fallback={<PendingUsers />}
-    >
+    <Suspense fallback={<UsersTableSkeleton />}>
       <UsersTableContent />
     </Suspense>
   )
@@ -131,7 +107,7 @@ function Admin() {
               text-white
             "
           >
-            Traffic Officers
+            Users
           </h1>
 
           <p
@@ -140,9 +116,7 @@ function Admin() {
               text-zinc-400
             "
           >
-            Manage officer accounts,
-            permissions, and realtime
-            monitoring access.
+            Manage users, permissions, and realtime monitoring access.
           </p>
         </div>
 

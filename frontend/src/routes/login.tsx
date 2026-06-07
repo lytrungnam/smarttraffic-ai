@@ -168,7 +168,7 @@ function Login() {
                   <FormControl>
                     <Input
                       data-testid="email-input"
-                      placeholder="officer@traffic.gov"
+                      placeholder="user@example.com"
                       type="email"
                       {...field}
                     />
@@ -219,7 +219,7 @@ function Login() {
 
           {/* FOOTER */}
           <div className="text-center text-sm">
-            Don't have an officer account?{" "}
+            Don't have a user account?{" "}
             <RouterLink to="/signup" className="underline underline-offset-4">
               Register
             </RouterLink>

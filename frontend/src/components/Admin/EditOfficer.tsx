@@ -34,7 +34,7 @@ import { handleError } from "@/utils"
 const formSchema = z
   .object({
     email: z.email({
-      message: "Invalid officer email address",
+      message: "Invalid email address",
     }),
 
     full_name: z.string().optional(),
@@ -42,8 +42,7 @@ const formSchema = z
     password: z
       .string()
       .min(8, {
-        message:
-          "Password must contain at least 8 characters",
+        message: "Password must contain at least 8 characters",
       })
       .optional()
       .or(z.literal("")),
@@ -54,16 +53,10 @@ const formSchema = z
 
     is_active: z.boolean().optional(),
   })
-  .refine(
-    (data) =>
-      !data.password ||
-      data.password === data.confirm_password,
-    {
-      message:
-        "Password confirmation does not match",
-      path: ["confirm_password"],
-    },
-  )
+  .refine((data) => !data.password || data.password === data.confirm_password, {
+    message: "Password confirmation does not match",
+    path: ["confirm_password"],
+  })
 
 type FormData = z.infer<typeof formSchema>
 
@@ -72,16 +65,12 @@ interface EditOfficerProps {
   onSuccess: () => void
 }
 
-const EditOfficer = ({
-  user,
-  onSuccess,
-}: EditOfficerProps) => {
+const EditOfficer = ({ user, onSuccess }: EditOfficerProps) => {
   const [isOpen, setIsOpen] = useState(false)
 
   const queryClient = useQueryClient()
 
-  const { showSuccessToast, showErrorToast } =
-    useCustomToast()
+  const { showSuccessToast, showErrorToast } = useCustomToast()
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -106,9 +95,7 @@ const EditOfficer = ({
       }),
 
     onSuccess: () => {
-      showSuccessToast(
-        "Traffic officer updated successfully",
-      )
+      showSuccessToast("User updated successfully")
 
       setIsOpen(false)
 
@@ -125,10 +112,7 @@ const EditOfficer = ({
   })
 
   const onSubmit = (data: FormData) => {
-    const {
-      confirm_password: _,
-      ...submitData
-    } = data
+    const { confirm_password: _, ...submitData } = data
 
     if (!submitData.password) {
       delete submitData.password
@@ -145,26 +129,21 @@ const EditOfficer = ({
         onClick={() => setIsOpen(true)}
       >
         <Pencil className="mr-2 h-4 w-4" />
-
-        Edit Officer
+        Edit User
       </DropdownMenuItem>
 
       {/* MODAL */}
       <DialogContent className="sm:max-w-md">
         <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-          >
+          <form onSubmit={form.handleSubmit(onSubmit)}>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Shield className="h-5 w-5 text-cyan-400" />
-
-                Edit Traffic Officer
+                Edit User Account
               </DialogTitle>
 
               <DialogDescription>
-                Update officer information and
-                permission settings for the AI
+                Update user information and permission settings for the AI
                 traffic monitoring system.
               </DialogDescription>
             </DialogHeader>
@@ -178,15 +157,12 @@ const EditOfficer = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      Officer Email{" "}
-                      <span className="text-destructive">
-                        *
-                      </span>
+                      Email <span className="text-destructive">*</span>
                     </FormLabel>
 
                     <FormControl>
                       <Input
-                        placeholder="officer@traffic.gov"
+                        placeholder="user@example.com"
                         type="email"
                         {...field}
                         required
@@ -204,13 +180,11 @@ const EditOfficer = ({
                 name="full_name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>
-                      Officer Name
-                    </FormLabel>
+                    <FormLabel>User Name</FormLabel>
 
                     <FormControl>
                       <Input
-                        placeholder="Officer full name"
+                        placeholder="User full name"
                         type="text"
                         {...field}
                       />
@@ -227,9 +201,7 @@ const EditOfficer = ({
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>
-                      Reset Password
-                    </FormLabel>
+                    <FormLabel>Reset Password</FormLabel>
 
                     <FormControl>
                       <Input
@@ -250,9 +222,7 @@ const EditOfficer = ({
                 name="confirm_password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>
-                      Confirm Password
-                    </FormLabel>
+                    <FormLabel>Confirm Password</FormLabel>
 
                     <FormControl>
                       <Input
@@ -276,9 +246,7 @@ const EditOfficer = ({
                     <FormControl>
                       <Checkbox
                         checked={field.value}
-                        onCheckedChange={
-                          field.onChange
-                        }
+                        onCheckedChange={field.onChange}
                       />
                     </FormControl>
 
@@ -288,8 +256,7 @@ const EditOfficer = ({
                       </FormLabel>
 
                       <p className="text-sm text-muted-foreground">
-                        Allow full management and
-                        monitoring permissions.
+                        Allow full management and monitoring permissions.
                       </p>
                     </div>
                   </FormItem>
@@ -305,20 +272,17 @@ const EditOfficer = ({
                     <FormControl>
                       <Checkbox
                         checked={field.value}
-                        onCheckedChange={
-                          field.onChange
-                        }
+                        onCheckedChange={field.onChange}
                       />
                     </FormControl>
 
                     <div>
                       <FormLabel className="font-medium">
-                        Active Officer Account
+                        Active User Account
                       </FormLabel>
 
                       <p className="text-sm text-muted-foreground">
-                        Enable login access for this
-                        officer account.
+                        Enable login access for this user account.
                       </p>
                     </div>
                   </FormItem>
@@ -329,18 +293,12 @@ const EditOfficer = ({
             {/* FOOTER */}
             <DialogFooter>
               <DialogClose asChild>
-                <Button
-                  variant="outline"
-                  disabled={mutation.isPending}
-                >
+                <Button variant="outline" disabled={mutation.isPending}>
                   Cancel
                 </Button>
               </DialogClose>
 
-              <LoadingButton
-                type="submit"
-                loading={mutation.isPending}
-              >
+              <LoadingButton type="submit" loading={mutation.isPending}>
                 Save Changes
               </LoadingButton>
             </DialogFooter>

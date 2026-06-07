@@ -8,38 +8,27 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
-const PendingUsers = () => (
+const UsersTableSkeleton = () => (
   <div className="overflow-x-auto">
-  <Table>
-    <TableHeader>
-      <TableRow>
-        <TableHead>
-          Officer Name
-        </TableHead>
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>User Name</TableHead>
 
-        <TableHead>
-          Officer Email
-        </TableHead>
+          <TableHead>Email</TableHead>
 
-        <TableHead>
-          Access Level
-        </TableHead>
+          <TableHead>Access Level</TableHead>
 
-        <TableHead>
-          Account Status
-        </TableHead>
+          <TableHead>Account Status</TableHead>
 
-        <TableHead>
-          <span className="sr-only">
-            Officer Actions
-          </span>
-        </TableHead>
-      </TableRow>
-    </TableHeader>
+          <TableHead>
+            <span className="sr-only">User Actions</span>
+          </TableHead>
+        </TableRow>
+      </TableHeader>
 
-    <TableBody>
-      {Array.from({ length: 5 }).map(
-        (_, index) => (
+      <TableBody>
+        {Array.from({ length: 5 }).map((_, index) => (
           <TableRow key={index}>
             <TableCell>
               <Skeleton className="h-4 w-32" />
@@ -67,11 +56,10 @@ const PendingUsers = () => (
               </div>
             </TableCell>
           </TableRow>
-        ),
-      )}
-    </TableBody>
-  </Table>
+        ))}
+      </TableBody>
+    </Table>
   </div>
 )
 
-export default PendingUsers
+export default UsersTableSkeleton

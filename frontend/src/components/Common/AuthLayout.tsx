@@ -19,7 +19,7 @@ export function AuthLayout({
           : "grid min-h-svh lg:grid-cols-2"
       }
     >
-      <div className="relative hidden overflow-visible bg-muted p-8 dark:bg-zinc-900 lg:flex lg:items-center lg:justify-center">
+      <div className="relative hidden overflow-visible bg-muted p-6 dark:bg-zinc-900 lg:flex lg:items-center lg:justify-center">
         <Logo
           variant={emphasizeBrand ? "hero" : "full"}
           className={emphasizeBrand ? "w-full" : "h-16"}

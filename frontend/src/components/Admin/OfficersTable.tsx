@@ -13,7 +13,7 @@ export const columns: ColumnDef<OfficerTableData>[] = [
   {
     accessorKey: "full_name",
 
-    header: "Officer Name",
+    header: "User Name",
 
     cell: ({ row }) => {
       const fullName = row.original.full_name
@@ -21,20 +21,13 @@ export const columns: ColumnDef<OfficerTableData>[] = [
       return (
         <div className="flex items-center gap-2">
           <span
-            className={cn(
-              "font-medium",
-              !fullName &&
-                "text-muted-foreground",
-            )}
+            className={cn("font-medium", !fullName && "text-muted-foreground")}
           >
-            {fullName || "Unknown Officer"}
+            {fullName || "Unknown User"}
           </span>
 
           {row.original.isCurrentUser && (
-            <Badge
-              variant="outline"
-              className="text-xs"
-            >
+            <Badge variant="outline" className="text-xs">
               Current Session
             </Badge>
           )}
@@ -46,12 +39,10 @@ export const columns: ColumnDef<OfficerTableData>[] = [
   {
     accessorKey: "email",
 
-    header: "Officer Email",
+    header: "Email",
 
     cell: ({ row }) => (
-      <span className="text-muted-foreground">
-        {row.original.email}
-      </span>
+      <span className="text-muted-foreground">{row.original.email}</span>
     ),
   },
 
@@ -61,16 +52,8 @@ export const columns: ColumnDef<OfficerTableData>[] = [
     header: "Access Level",
 
     cell: ({ row }) => (
-      <Badge
-        variant={
-          row.original.is_superuser
-            ? "default"
-            : "secondary"
-        }
-      >
-        {row.original.is_superuser
-          ? "System Administrator"
-          : "Traffic Officer"}
+      <Badge variant={row.original.is_superuser ? "default" : "secondary"}>
+        {row.original.is_superuser ? "System Administrator" : "User"}
       </Badge>
     ),
   },
@@ -85,22 +68,12 @@ export const columns: ColumnDef<OfficerTableData>[] = [
         <span
           className={cn(
             "size-2 rounded-full",
-            row.original.is_active
-              ? "bg-green-500"
-              : "bg-gray-400",
+            row.original.is_active ? "bg-green-500" : "bg-gray-400",
           )}
         />
 
-        <span
-          className={
-            row.original.is_active
-              ? ""
-              : "text-muted-foreground"
-          }
-        >
-          {row.original.is_active
-            ? "Active"
-            : "Disabled"}
+        <span className={row.original.is_active ? "" : "text-muted-foreground"}>
+          {row.original.is_active ? "Active" : "Disabled"}
         </span>
       </div>
     ),
@@ -109,17 +82,11 @@ export const columns: ColumnDef<OfficerTableData>[] = [
   {
     id: "actions",
 
-    header: () => (
-      <span className="sr-only">
-        Officer Actions
-      </span>
-    ),
+    header: () => <span className="sr-only">User Actions</span>,
 
     cell: ({ row }) => (
       <div className="flex justify-end">
-        <OfficerActionsMenu
-          user={row.original}
-        />
+        <OfficerActionsMenu user={row.original} />
       </div>
     ),
   },

@@ -23,7 +23,7 @@ export function Logo({
       className={cn(
         "flex shrink-0 items-center justify-center border border-cyan-400/20 bg-cyan-500/10 backdrop-blur-md",
         isHero
-          ? "size-44 rounded-[2.5rem] shadow-[0_0_70px_rgba(34,211,238,0.32)] xl:size-52"
+          ? "size-36 rounded-[2rem] shadow-[0_0_60px_rgba(34,211,238,0.3)] xl:size-44"
           : isFull
             ? "size-14 rounded-2xl shadow-[0_0_30px_rgba(34,211,238,0.2)]"
             : "size-10 rounded-2xl shadow-[0_0_20px_rgba(34,211,238,0.2)]",
@@ -32,7 +32,7 @@ export function Logo({
       <CarFront
         className={cn(
           "text-cyan-400 drop-shadow-[0_0_12px_rgba(34,211,238,0.7)]",
-          isHero ? "size-24 xl:size-28" : isFull ? "size-7" : "size-5",
+          isHero ? "size-20 xl:size-24" : isFull ? "size-7" : "size-5",
         )}
       />
     </div>
@@ -42,20 +42,20 @@ export function Logo({
     <div
       className={cn(
         "flex flex-col leading-none",
-        isHero && "items-center gap-4 text-center",
+        isHero && "items-center gap-3 text-center",
       )}
     >
       {/* Line 1: SmartTraffic AI */}
       <div
         className={cn(
           "flex items-baseline whitespace-nowrap",
-          isHero ? "gap-3" : "gap-1",
+          isHero ? "gap-2" : "gap-1",
         )}
       >
         <span
           className={cn(
             "font-['Playfair_Display'] font-bold tracking-wide text-white",
-            isHero ? "text-5xl xl:text-7xl" : "text-[15px]",
+            isHero ? "text-4xl xl:text-6xl" : "text-[15px]",
           )}
         >
           Smart
@@ -63,7 +63,7 @@ export function Logo({
         <span
           className={cn(
             "font-['Playfair_Display'] font-bold tracking-wide text-cyan-400",
-            isHero ? "text-5xl xl:text-7xl" : "text-[15px]",
+            isHero ? "text-4xl xl:text-6xl" : "text-[15px]",
           )}
         >
           Traffic
@@ -71,7 +71,7 @@ export function Logo({
         <span
           className={cn(
             "font-['Playfair_Display'] font-bold tracking-wider text-cyan-300",
-            isHero ? "text-4xl xl:text-6xl" : "text-[13px]",
+            isHero ? "text-3xl xl:text-5xl" : "text-[13px]",
           )}
         >
           AI
@@ -83,7 +83,7 @@ export function Logo({
         className={cn(
           "whitespace-nowrap text-gray-500",
           isHero
-            ? "text-base font-semibold tracking-[0.35em] text-cyan-200/70 xl:text-xl xl:tracking-[0.45em]"
+            ? "text-sm font-semibold tracking-[0.3em] text-cyan-200/70 xl:text-lg xl:tracking-[0.4em]"
             : "mt-0.5 text-[9px] tracking-[0.25em]",
         )}
       >
@@ -101,7 +101,7 @@ export function Logo({
       className={cn(
         "flex shrink-0 whitespace-nowrap",
         isHero
-          ? "flex-col items-center justify-center gap-9"
+          ? "flex-col items-center justify-center gap-6"
           : "items-center gap-2",
         className,
       )}

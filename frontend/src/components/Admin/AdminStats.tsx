@@ -1,13 +1,8 @@
-import {
-  Activity,
-  Camera,
-  ShieldCheck,
-  Users,
-} from "lucide-react"
+import { Activity, Camera, ShieldCheck, Users } from "lucide-react"
 
 const stats = [
   {
-    title: "Active Officers",
+    title: "Active Users",
     value: "24",
     icon: Users,
     color: "text-cyan-400",
@@ -108,9 +103,7 @@ export default function AdminStats() {
                   p-4
                 "
               >
-                <Icon
-                  className={`h-6 w-6 ${item.color}`}
-                />
+                <Icon className={`h-6 w-6 ${item.color}`} />
               </div>
             </div>
           </div>

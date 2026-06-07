@@ -34,7 +34,7 @@ import { handleError } from "@/utils"
 const formSchema = z
   .object({
     email: z.email({
-      message: "Invalid officer email address",
+      message: "Invalid email address",
     }),
 
     full_name: z.string().optional(),
@@ -45,27 +45,21 @@ const formSchema = z
         message: "Password is required",
       })
       .min(8, {
-        message:
-          "Password must contain at least 8 characters",
+        message: "Password must contain at least 8 characters",
       }),
 
-    confirm_password: z
-      .string()
-      .min(1, {
-        message: "Please confirm your password",
-      }),
+    confirm_password: z.string().min(1, {
+      message: "Please confirm your password",
+    }),
 
     is_superuser: z.boolean(),
 
     is_active: z.boolean(),
   })
-  .refine(
-    (data) => data.password === data.confirm_password,
-    {
-      message: "Password confirmation does not match",
-      path: ["confirm_password"],
-    },
-  )
+  .refine((data) => data.password === data.confirm_password, {
+    message: "Password confirmation does not match",
+    path: ["confirm_password"],
+  })
 
 type FormData = z.infer<typeof formSchema>
 
@@ -74,8 +68,7 @@ const AddUser = () => {
 
   const queryClient = useQueryClient()
 
-  const { showSuccessToast, showErrorToast } =
-    useCustomToast()
+  const { showSuccessToast, showErrorToast } = useCustomToast()
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -101,9 +94,7 @@ const AddUser = () => {
       }),
 
     onSuccess: () => {
-      showSuccessToast(
-        "Traffic officer account created successfully",
-      )
+      showSuccessToast("User account created successfully")
 
       form.reset()
 
@@ -128,8 +119,7 @@ const AddUser = () => {
       <DialogTrigger asChild>
         <Button className="my-4">
           <Plus className="mr-2 h-4 w-4" />
-
-          Add Traffic Officer
+          Add User
         </Button>
       </DialogTrigger>
 
@@ -138,22 +128,18 @@ const AddUser = () => {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-cyan-400" />
-
-            Register Traffic Officer
+            Register User
           </DialogTitle>
 
           <DialogDescription>
-            Create a new officer account for the AI
-            traffic monitoring and vehicle recognition
-            system.
+            Create a new user account for the AI traffic monitoring and vehicle
+            recognition system.
           </DialogDescription>
         </DialogHeader>
 
         {/* FORM */}
         <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-          >
+          <form onSubmit={form.handleSubmit(onSubmit)}>
             <div className="grid gap-4 py-4">
               {/* EMAIL */}
               <FormField
@@ -162,15 +148,12 @@ const AddUser = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      Officer Email{" "}
-                      <span className="text-destructive">
-                        *
-                      </span>
+                      Email <span className="text-destructive">*</span>
                     </FormLabel>
 
                     <FormControl>
                       <Input
-                        placeholder="officer@traffic.gov"
+                        placeholder="user@example.com"
                         type="email"
                         {...field}
                         required
@@ -188,13 +171,11 @@ const AddUser = () => {
                 name="full_name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>
-                      Officer Name
-                    </FormLabel>
+                    <FormLabel>User Name</FormLabel>
 
                     <FormControl>
                       <Input
-                        placeholder="Officer full name"
+                        placeholder="User full name"
                         type="text"
                         {...field}
                       />
@@ -213,9 +194,7 @@ const AddUser = () => {
                   <FormItem>
                     <FormLabel>
                       Create Password{" "}
-                      <span className="text-destructive">
-                        *
-                      </span>
+                      <span className="text-destructive">*</span>
                     </FormLabel>
 
                     <FormControl>
@@ -240,9 +219,7 @@ const AddUser = () => {
                   <FormItem>
                     <FormLabel>
                       Confirm Password{" "}
-                      <span className="text-destructive">
-                        *
-                      </span>
+                      <span className="text-destructive">*</span>
                     </FormLabel>
 
                     <FormControl>
@@ -268,9 +245,7 @@ const AddUser = () => {
                     <FormControl>
                       <Checkbox
                         checked={field.value}
-                        onCheckedChange={
-                          field.onChange
-                        }
+                        onCheckedChange={field.onChange}
                       />
                     </FormControl>
 
@@ -280,8 +255,7 @@ const AddUser = () => {
                       </FormLabel>
 
                       <p className="text-sm text-muted-foreground">
-                        Grant full system monitoring and
-                        management permissions.
+                        Grant full system monitoring and management permissions.
                       </p>
                     </div>
                   </FormItem>
@@ -297,20 +271,18 @@ const AddUser = () => {
                     <FormControl>
                       <Checkbox
                         checked={field.value}
-                        onCheckedChange={
-                          field.onChange
-                        }
+                        onCheckedChange={field.onChange}
                       />
                     </FormControl>
 
                     <div>
                       <FormLabel className="font-medium">
-                        Enable Officer Account
+                        Enable User Account
                       </FormLabel>
 
                       <p className="text-sm text-muted-foreground">
-                        Allow this officer to access the
-                        AI traffic monitoring dashboard.
+                        Allow this user to access the AI traffic monitoring
+                        dashboard.
                       </p>
                     </div>
                   </FormItem>
@@ -321,21 +293,14 @@ const AddUser = () => {
             {/* FOOTER */}
             <DialogFooter>
               <DialogClose asChild>
-                <Button
-                  variant="outline"
-                  disabled={mutation.isPending}
-                >
+                <Button variant="outline" disabled={mutation.isPending}>
                   Cancel Registration
                 </Button>
               </DialogClose>
 
-              <LoadingButton
-                type="submit"
-                loading={mutation.isPending}
-              >
+              <LoadingButton type="submit" loading={mutation.isPending}>
                 <BadgeCheck className="mr-2 h-4 w-4" />
-
-                Create Officer
+                Create User
               </LoadingButton>
             </DialogFooter>
           </form>
