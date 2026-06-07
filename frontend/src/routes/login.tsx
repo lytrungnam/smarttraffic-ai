@@ -31,8 +31,7 @@ const formSchema = z.object({
       message: "Password is required",
     })
     .min(8, {
-      message:
-        "Password must be at least 8 characters",
+      message: "Password must be at least 8 characters",
     }),
 }) satisfies z.ZodType<AccessToken>
 
@@ -52,8 +51,7 @@ export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
       {
-        title:
-          "Login - SmartTraffic AI",
+        title: "Login - SmartTraffic AI",
       },
     ],
   }),
@@ -82,17 +80,16 @@ function Login() {
   }
 
   return (
-    <AuthLayout>
+    <AuthLayout emphasizeBrand>
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
           className="flex flex-col gap-6"
         >
-         {/* HEADER */}
-<div className="flex flex-col items-center gap-5 text-center">
-
-  <div
-    className="
+          {/* HEADER */}
+          <div className="flex flex-col items-center gap-5 overflow-visible text-center">
+            <div
+              className="
       relative flex items-center justify-center
       size-20 rounded-3xl
       bg-gradient-to-br
@@ -102,52 +99,50 @@ function Login() {
       shadow-[0_0_40px_rgba(34,211,238,0.15)]
       backdrop-blur-sm
     "
-  >
-    <div
-      className="
+            >
+              <div
+                className="
         absolute inset-0 rounded-3xl
         bg-cyan-400/5
         animate-pulse
       "
-    />
+              />
 
-    <CarFront
-      className="
-        size-10 text-cyan-400
+              <CarFront
+                className="
+        relative z-10 size-10 text-cyan-400
         drop-shadow-[0_0_10px_rgba(34,211,238,0.6)]
       "
-    />
-  </div>
+              />
+            </div>
 
-  <div className="space-y-2">
-    <h1
-      className="
-        text-4xl font-black tracking-tight
-        bg-gradient-to-r
-        from-cyan-400
-        via-white
-        to-cyan-200
-        bg-clip-text
-        text-transparent
+            <div className="space-y-2">
+              <h1
+                className="
+        relative z-10 whitespace-nowrap
+        text-3xl font-black tracking-tight
+        text-white opacity-100
+        drop-shadow-[0_0_16px_rgba(34,211,238,0.28)]
+        sm:text-4xl
       "
-    >
-      SmartTraffic AI
-    </h1>
+              >
+                Smart<span className="text-cyan-400">Traffic</span>{" "}
+                <span className="text-cyan-300">AI</span>
+              </h1>
 
-    <p
-      className="
+              <p
+                className="
         text-sm text-muted-foreground
         max-w-sm leading-relaxed
       "
-    >
-      AI-powered traffic monitoring,
-      automatic vehicle detection
-      and license plate recognition system
-    </p>
-  </div>
+              >
+                AI-powered traffic monitoring, automatic vehicle detection and
+                license plate recognition system
+              </p>
+            </div>
 
-  <div
-    className="
+            <div
+              className="
       flex items-center gap-2
       rounded-full
       border border-cyan-500/20
@@ -155,12 +150,11 @@ function Login() {
       px-4 py-1.5
       text-xs text-cyan-300
     "
-  >
-    <div className="size-2 rounded-full bg-emerald-400 animate-pulse" />
-
-    Real-time Monitoring Active
-  </div>
-</div>
+            >
+              <div className="size-2 rounded-full bg-emerald-400 animate-pulse" />
+              Real-time Monitoring Active
+            </div>
+          </div>
 
           {/* FORM */}
           <div className="grid gap-4">
@@ -169,9 +163,7 @@ function Login() {
               name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>
-                    Officer Email
-                  </FormLabel>
+                  <FormLabel>Email</FormLabel>
 
                   <FormControl>
                     <Input
@@ -193,9 +185,7 @@ function Login() {
               render={({ field }) => (
                 <FormItem>
                   <div className="flex items-center">
-                    <FormLabel>
-                      Password
-                    </FormLabel>
+                    <FormLabel>Password</FormLabel>
 
                     <RouterLink
                       to="/recover-password"
@@ -222,22 +212,15 @@ function Login() {
               )}
             />
 
-            <LoadingButton
-              type="submit"
-              loading={loginMutation.isPending}
-            >
-              Access System
+            <LoadingButton type="submit" loading={loginMutation.isPending}>
+              Sign In
             </LoadingButton>
           </div>
 
           {/* FOOTER */}
           <div className="text-center text-sm">
             Don't have an officer account?{" "}
-
-            <RouterLink
-              to="/signup"
-              className="underline underline-offset-4"
-            >
+            <RouterLink to="/signup" className="underline underline-offset-4">
               Register
             </RouterLink>
           </div>

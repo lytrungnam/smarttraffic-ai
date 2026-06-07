@@ -1,9 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 
-import {
-  Activity,
-  BarChart3,
-} from "lucide-react"
+import { Activity, BarChart3 } from "lucide-react"
 
 import DashboardSection from "@/components/Dashboard/DashboardSection"
 
@@ -14,9 +11,7 @@ import DetectionAccuracy from "@/components/Analytics/DetectionAccuracy"
 import TrafficChart from "@/components/Analytics/TrafficChart"
 import VehicleChart from "@/components/Analytics/VehicleChart"
 
-export const Route = createFileRoute(
-  "/_layout/analytics",
-)({
+export const Route = createFileRoute("/_layout/analytics")({
   component: AnalyticsPage,
 })
 
@@ -54,7 +49,7 @@ function AnalyticsPage() {
         {/* CHARTS */}
         <section
           className="
-            grid grid-cols-1 gap-6
+            grid w-full max-w-full min-w-0 grid-cols-1 gap-6 overflow-hidden
             xl:grid-cols-2
           "
         >

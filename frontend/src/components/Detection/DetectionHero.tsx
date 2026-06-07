@@ -32,7 +32,7 @@ const heroStats = [
 
   {
     title: "AI Cameras",
-    value: "24",
+    value: "0",
     status: "ONLINE",
     icon: Camera,
     color: "violet",
@@ -98,7 +98,7 @@ export default function DetectionHero() {
     if (item.title === "AI Cameras") {
       return {
         ...item,
-        value: String(summary?.online_camera_count ?? 1),
+        value: String(summary?.online_camera_count ?? 0),
       }
     }
 

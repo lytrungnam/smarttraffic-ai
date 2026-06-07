@@ -20,46 +20,47 @@ import {
   VEHICLE_CLASS_COLORS,
   VEHICLE_CLASS_LABELS,
 } from "@/constants/vehicleClasses"
-import { getAnalyticsSummary } from "@/services/analyticsService"
-
-const stats = [
-  {
-    title: "Total Vehicles",
-    value: "PostgreSQL",
-    icon: Car,
-    color: "text-cyan-400",
-  },
-
-  {
-    title: "AI Monitoring",
-    value: "Live",
-    icon: Radar,
-    color: "text-green-400",
-  },
-
-  {
-    title: "Stored Detections",
-    value: "PostgreSQL",
-    icon: Database,
-    color: "text-cyan-400",
-  },
-
-  {
-    title: "Realtime Cameras",
-    value: "24",
-    icon: Activity,
-    color: "text-yellow-400",
-  },
-]
+import {
+  getAnalyticsSummary,
+  getTotalVehicleCount,
+} from "@/services/analyticsService"
 
 export default function AnalyticsOverview() {
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["analytics-summary"],
     queryFn: getAnalyticsSummary,
     refetchInterval: 5000,
   })
 
-  const total = data?.total_vehicle_count ?? 0
+  const total = getTotalVehicleCount(data)
+  const countValue = (value: number) =>
+    isLoading ? "..." : value.toLocaleString()
+  const stats = [
+    {
+      title: "Total Vehicles",
+      value: countValue(total),
+      icon: Car,
+      color: "text-cyan-400",
+    },
+    {
+      title: "AI Monitoring",
+      value: "Live",
+      icon: Radar,
+      color: "text-green-400",
+    },
+    {
+      title: "Stored Detections",
+      value: countValue(data?.total_detections ?? 0),
+      icon: Database,
+      color: "text-cyan-400",
+    },
+    {
+      title: "Realtime Cameras",
+      value: countValue(data?.online_camera_count ?? 0),
+      icon: Activity,
+      color: "text-yellow-400",
+    },
+  ]
   const vehicleTypes = TRAFFIC_VEHICLE_CLASSES.map((vehicleClass) => {
     const count = data?.vehicle_type_counts[vehicleClass] ?? 0
     return {
@@ -217,12 +218,13 @@ export default function AnalyticsOverview() {
                 "
               >
                 {/* LEFT */}
-                <div>
+                <div className="min-w-0 flex-1">
                   <p
                     className="
                       text-xs
                       font-semibold
 
+                      truncate
                       text-zinc-400
                     "
                   >
@@ -237,6 +239,7 @@ export default function AnalyticsOverview() {
                       font-semibold
                       tracking-tight
 
+                      truncate
                       text-white
                     "
                   >
@@ -247,6 +250,7 @@ export default function AnalyticsOverview() {
                 {/* ICON */}
                 <div
                   className="
+                    shrink-0
                     rounded-2xl
 
                     border border-white/10

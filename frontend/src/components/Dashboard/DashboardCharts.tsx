@@ -18,7 +18,10 @@ import {
   VEHICLE_CLASS_COLORS,
   VEHICLE_CLASS_LABELS,
 } from "@/constants/vehicleClasses"
-import type { AnalyticsSummary } from "@/services/analyticsService"
+import {
+  type AnalyticsSummary,
+  getTotalVehicleCount,
+} from "@/services/analyticsService"
 
 function ChartCard({
   title,
@@ -87,7 +90,7 @@ export default function DashboardCharts({ summary }: DashboardChartsProps) {
     },
   ]
 
-  const totalVehicles = summary?.total_vehicle_count ?? 0
+  const totalVehicles = getTotalVehicleCount(summary)
   const vehicleData = TRAFFIC_VEHICLE_CLASSES.map((vehicleClass) => {
     const count = summary?.vehicle_type_counts[vehicleClass] ?? 0
     return {

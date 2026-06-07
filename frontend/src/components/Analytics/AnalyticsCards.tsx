@@ -1,70 +1,73 @@
 // components/Analytics/AnalyticsCards.tsx
 
+import { useQuery } from "@tanstack/react-query"
 import { Activity, Camera, Car, Cpu, Database } from "lucide-react"
 
-const analyticsCards = [
-  {
-    title: "Realtime Vehicles",
-    value: "Live",
-    description: "Detected in the last hour",
-    icon: Car,
-    color: "cyan",
-    glow: "from-cyan-500/20 to-blue-500/10",
-    iconColor: "text-cyan-400",
-  },
-
-  {
-    title: "Stored Detections",
-    value: "PostgreSQL",
-    description: "Evidence-backed ALPR records",
-    icon: Database,
-    color: "green",
-    glow: "from-green-500/20 to-emerald-500/10",
-    iconColor: "text-green-400",
-  },
-
-  {
-    title: "Active Cameras",
-    value: "24",
-    description: "Realtime monitoring",
-    icon: Camera,
-    color: "yellow",
-    glow: "from-yellow-500/20 to-amber-500/10",
-    iconColor: "text-yellow-400",
-  },
-
-  {
-    title: "AI Processing",
-    value: "Stream",
-    description: "Realtime deep learning",
-    icon: Cpu,
-    color: "purple",
-    glow: "from-purple-500/20 to-pink-500/10",
-    iconColor: "text-purple-400",
-  },
-
-  {
-    title: "System Activity",
-    value: "Online",
-    description: "Server uptime stability",
-    icon: Activity,
-    color: "green",
-    glow: "from-green-500/20 to-emerald-500/10",
-    iconColor: "text-green-400",
-  },
-
-  {
-    title: "Processing Queue",
-    value: "Live",
-    description: "Realtime monitoring events",
-    icon: Activity,
-    color: "orange",
-    glow: "from-orange-500/20 to-red-500/10",
-    iconColor: "text-orange-400",
-  },
-]
+import {
+  getAnalyticsSummary,
+  getTotalVehicleCount,
+} from "@/services/analyticsService"
 
 export default function AnalyticsCards() {
+  const { data, isLoading } = useQuery({
+    queryKey: ["analytics-summary"],
+    queryFn: getAnalyticsSummary,
+    refetchInterval: 5000,
+  })
+
+  const countValue = (value: number) =>
+    isLoading ? "..." : value.toLocaleString()
+  const analyticsCards = [
+    {
+      title: "Total Vehicles",
+      value: countValue(getTotalVehicleCount(data)),
+      description: "AI-classified vehicle records",
+      icon: Car,
+      glow: "from-cyan-500/20 to-blue-500/10",
+      iconColor: "text-cyan-400",
+    },
+    {
+      title: "Stored Detections",
+      value: countValue(data?.total_detections ?? 0),
+      description: "Evidence-backed ALPR records",
+      icon: Database,
+      glow: "from-green-500/20 to-emerald-500/10",
+      iconColor: "text-green-400",
+    },
+    {
+      title: "Realtime Cameras",
+      value: countValue(data?.online_camera_count ?? 0),
+      description: "Online registered cameras",
+      icon: Camera,
+      glow: "from-yellow-500/20 to-amber-500/10",
+      iconColor: "text-yellow-400",
+    },
+    {
+      title: "AI Monitoring",
+      value: "Live",
+      description: "Realtime deep learning",
+      icon: Cpu,
+      glow: "from-purple-500/20 to-pink-500/10",
+      iconColor: "text-purple-400",
+    },
+    {
+      title: "System Activity",
+      value: "Online",
+      description: "Server uptime stability",
+      icon: Activity,
+      glow: "from-green-500/20 to-emerald-500/10",
+      iconColor: "text-green-400",
+    },
+    {
+      title: "Processing Queue",
+      value: "Live",
+      description: "Realtime monitoring events",
+      icon: Activity,
+      glow: "from-orange-500/20 to-red-500/10",
+      iconColor: "text-orange-400",
+    },
+  ]
+
   return (
     <div
       className="
@@ -126,13 +129,14 @@ export default function AnalyticsCards() {
                 "
               >
                 {/* LEFT */}
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   {/* TITLE */}
                   <p
                     className="
                       text-xs
                       font-semibold
 
+                      truncate
                       text-zinc-400
                     "
                   >
@@ -148,6 +152,7 @@ export default function AnalyticsCards() {
                       font-semibold
                       tracking-tight
 
+                      truncate
                       text-white
                     "
                   >
@@ -172,6 +177,7 @@ export default function AnalyticsCards() {
                 {/* ICON */}
                 <div
                   className="
+                    shrink-0
                     rounded-2xl
 
                     border border-white/10

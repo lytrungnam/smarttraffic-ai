@@ -23,6 +23,7 @@ export default function DashboardSection({
     <section
       className={`
         h-full
+        w-full max-w-full min-w-0
         overflow-hidden
 
         rounded-3xl
@@ -116,6 +117,8 @@ export default function DashboardSection({
       <div
         className="
           h-full
+          w-full max-w-full min-w-0
+          overflow-hidden
 
           text-sm
           font-medium

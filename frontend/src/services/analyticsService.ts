@@ -15,18 +15,51 @@ export type AnalyticsSummary = {
   online_camera_count: number
 }
 
+const toCount = (value: unknown) =>
+  typeof value === "number" && Number.isFinite(value) ? value : 0
+
+export const getTotalVehicleCount = (
+  summary: AnalyticsSummary | null | undefined,
+) => {
+  if (
+    typeof summary?.total_vehicle_count === "number" &&
+    Number.isFinite(summary.total_vehicle_count)
+  ) {
+    return summary.total_vehicle_count
+  }
+
+  return Object.values(summary?.vehicle_type_counts ?? {}).reduce(
+    (total, count) => total + toCount(count),
+    0,
+  )
+}
+
 export const getAnalyticsSummary = async () => {
   const response = await axios.get<AnalyticsSummary>(
     `${API_URL}/analytics/summary`,
   )
 
+  const vehicleTypeCounts = Object.fromEntries(
+    TRAFFIC_VEHICLE_CLASSES.map((vehicleClass) => [
+      vehicleClass,
+      toCount(response.data.vehicle_type_counts?.[vehicleClass]),
+    ]),
+  )
+
   return {
     ...response.data,
-    vehicle_type_counts: Object.fromEntries(
-      TRAFFIC_VEHICLE_CLASSES.map((vehicleClass) => [
-        vehicleClass,
-        response.data.vehicle_type_counts[vehicleClass] ?? 0,
-      ]),
-    ),
+    total_detections: toCount(response.data.total_detections),
+    detections_today: toCount(response.data.detections_today),
+    unique_plates: toCount(response.data.unique_plates),
+    vehicle_type_counts: vehicleTypeCounts,
+    total_vehicle_count:
+      typeof response.data.total_vehicle_count === "number" &&
+      Number.isFinite(response.data.total_vehicle_count)
+        ? response.data.total_vehicle_count
+        : Object.values(vehicleTypeCounts).reduce(
+            (total, count) => total + count,
+            0,
+          ),
+    online_camera_count: toCount(response.data.online_camera_count),
   }
 }

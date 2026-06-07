@@ -51,7 +51,7 @@ export const Route = createFileRoute("/signup")({
   head: () => ({
     meta: [
       {
-        title: "Officer Registration - SmartTraffic AI",
+        title: "Sign in - SmartTraffic AI",
       },
     ],
   }),

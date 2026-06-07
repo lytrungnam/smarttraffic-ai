@@ -4,7 +4,7 @@ import { CarFront } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface LogoProps {
-  variant?: "full" | "icon" | "responsive"
+  variant?: "full" | "hero" | "icon" | "responsive"
   className?: string
   asLink?: boolean
 }
@@ -15,43 +15,78 @@ export function Logo({
   asLink = true,
 }: LogoProps) {
   const isFull = variant === "full"
+  const isHero = variant === "hero"
   const isIcon = variant === "icon"
 
   const iconBox = (
     <div
       className={cn(
-        "flex shrink-0 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-500/10 backdrop-blur-md",
-        isFull
-          ? "size-14 shadow-[0_0_30px_rgba(34,211,238,0.2)]"
-          : "size-10 shadow-[0_0_20px_rgba(34,211,238,0.2)]",
+        "flex shrink-0 items-center justify-center border border-cyan-400/20 bg-cyan-500/10 backdrop-blur-md",
+        isHero
+          ? "size-44 rounded-[2.5rem] shadow-[0_0_70px_rgba(34,211,238,0.32)] xl:size-52"
+          : isFull
+            ? "size-14 rounded-2xl shadow-[0_0_30px_rgba(34,211,238,0.2)]"
+            : "size-10 rounded-2xl shadow-[0_0_20px_rgba(34,211,238,0.2)]",
       )}
     >
       <CarFront
         className={cn(
           "text-cyan-400 drop-shadow-[0_0_12px_rgba(34,211,238,0.7)]",
-          isFull ? "size-7" : "size-5",
+          isHero ? "size-24 xl:size-28" : isFull ? "size-7" : "size-5",
         )}
       />
     </div>
   )
 
   const textBlock = (
-    <div className="flex flex-col leading-none">
+    <div
+      className={cn(
+        "flex flex-col leading-none",
+        isHero && "items-center gap-4 text-center",
+      )}
+    >
       {/* Line 1: SmartTraffic AI */}
-      <div className="flex items-baseline gap-1 whitespace-nowrap">
-        <span className="font-['Playfair_Display'] text-[15px] font-bold tracking-wide text-white">
+      <div
+        className={cn(
+          "flex items-baseline whitespace-nowrap",
+          isHero ? "gap-3" : "gap-1",
+        )}
+      >
+        <span
+          className={cn(
+            "font-['Playfair_Display'] font-bold tracking-wide text-white",
+            isHero ? "text-5xl xl:text-7xl" : "text-[15px]",
+          )}
+        >
           Smart
         </span>
-        <span className="font-['Playfair_Display'] text-[15px] font-bold tracking-wide text-cyan-400">
+        <span
+          className={cn(
+            "font-['Playfair_Display'] font-bold tracking-wide text-cyan-400",
+            isHero ? "text-5xl xl:text-7xl" : "text-[15px]",
+          )}
+        >
           Traffic
         </span>
-        <span className="font-['Playfair_Display'] text-[13px] font-bold tracking-wider text-cyan-300">
+        <span
+          className={cn(
+            "font-['Playfair_Display'] font-bold tracking-wider text-cyan-300",
+            isHero ? "text-4xl xl:text-6xl" : "text-[13px]",
+          )}
+        >
           AI
         </span>
       </div>
 
       {/* Line 2: subtitle */}
-      <span className="mt-0.5 whitespace-nowrap text-[9px] tracking-[0.25em] text-gray-500">
+      <span
+        className={cn(
+          "whitespace-nowrap text-gray-500",
+          isHero
+            ? "text-base font-semibold tracking-[0.35em] text-cyan-200/70 xl:text-xl xl:tracking-[0.45em]"
+            : "mt-0.5 text-[9px] tracking-[0.25em]",
+        )}
+      >
         VEHICLE DETECTION SYSTEM
       </span>
     </div>
@@ -62,7 +97,15 @@ export function Logo({
       {iconBox}
     </div>
   ) : (
-    <div className={cn("flex shrink-0 items-center gap-2 whitespace-nowrap", className)}>
+    <div
+      className={cn(
+        "flex shrink-0 whitespace-nowrap",
+        isHero
+          ? "flex-col items-center justify-center gap-9"
+          : "items-center gap-2",
+        className,
+      )}
+    >
       {iconBox}
       {textBlock}
     </div>

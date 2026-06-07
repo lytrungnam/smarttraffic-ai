@@ -7,7 +7,10 @@ import {
   VEHICLE_CLASS_ICONS,
   VEHICLE_CLASS_LABELS,
 } from "@/constants/vehicleClasses"
-import { getAnalyticsSummary } from "@/services/analyticsService"
+import {
+  getAnalyticsSummary,
+  getTotalVehicleCount,
+} from "@/services/analyticsService"
 
 export default function VehicleChart() {
   const { data, isLoading } = useQuery({
@@ -17,7 +20,7 @@ export default function VehicleChart() {
   })
 
   const counts = data?.vehicle_type_counts ?? {}
-  const total = data?.total_vehicle_count ?? 0
+  const total = getTotalVehicleCount(data)
 
   const vehicleItems = TRAFFIC_VEHICLE_CLASSES.map((name) => ({
     name: VEHICLE_CLASS_LABELS[name],
@@ -70,7 +73,9 @@ export default function VehicleChart() {
             <h2 className="text-5xl font-semibold tracking-tight text-white">
               {isLoading ? "..." : total.toLocaleString()}
             </h2>
-            <p className="mt-3 text-sm text-zinc-400">Total Vehicles Detected</p>
+            <p className="mt-3 text-sm text-zinc-400">
+              Total Vehicles Detected
+            </p>
             <div className="mt-6 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-4 py-2">
               <span className="text-xs font-semibold text-cyan-400">
                 Realtime AI Monitoring Active
@@ -99,7 +104,10 @@ export default function VehicleChart() {
                       className="shrink-0 rounded-2xl p-4"
                       style={{ backgroundColor: `${item.color}20` }}
                     >
-                      <item.Icon className="h-6 w-6" style={{ color: item.color }} />
+                      <item.Icon
+                        className="h-6 w-6"
+                        style={{ color: item.color }}
+                      />
                     </div>
 
                     <div className="min-w-0 flex-1">

@@ -98,13 +98,14 @@ function DashboardCard({
       {/* CONTENT */}
       <div className="relative flex items-start justify-between">
         {/* LEFT */}
-        <div className="flex-1">
+        <div className="min-w-0 flex-1">
           {/* TITLE */}
           <p
             className="
               text-xs
               font-medium
               tracking-[0.12em]
+              truncate
               text-zinc-500
             "
           >
@@ -121,6 +122,7 @@ function DashboardCard({
               tracking-tight
               leading-none
 
+              truncate
               text-white
             "
           >
@@ -147,6 +149,7 @@ function DashboardCard({
         {/* ICON */}
         <div
           className="
+            shrink-0
             rounded-2xl
             border border-white/10
             bg-black/30
@@ -209,9 +212,9 @@ export default function DashboardCards({
 }: DashboardCardsProps) {
   const cards: DashboardCardItem[] = [
     {
-      title: "Total Detections",
+      title: "Stored Detections",
       value: isLoading ? "..." : String(summary?.total_detections ?? 0),
-      growth: "PostgreSQL",
+      growth: "Database Records",
       status: "Stored Records",
       icon: Database,
       color: "cyan",
