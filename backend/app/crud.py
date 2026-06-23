@@ -133,3 +133,62 @@ def authenticate(
         session.refresh(db_user)
 
     return db_user
+
+
+# Camera CRUD helpers
+from app.models.camera import Camera
+
+
+def get_camera_by_id(*, session: Session, camera_id: str) -> Camera | None:
+    return session.get(Camera, camera_id)
+
+
+def get_camera_by_name(*, session: Session, name: str) -> Camera | None:
+    statement = select(Camera).where(Camera.name == name)
+    return session.exec(statement).first()
+
+
+def get_cameras(*, session: Session, skip: int = 0, limit: int = 100) -> list[Camera]:
+    statement = select(Camera).offset(skip).limit(limit)
+    return session.exec(statement).all()
+
+
+def create_camera(*, session: Session, camera: dict) -> Camera:
+    # `camera` expected to contain: name, location, source_url, camera_type, is_active
+    db_obj = Camera(
+        name=camera.get("name"),
+        location=camera.get("location"),
+        stream_url=camera.get("source_url"),
+        camera_type=camera.get("camera_type", "webcam"),
+        is_active=camera.get("is_active", True),
+    )
+    session.add(db_obj)
+    session.commit()
+    session.refresh(db_obj)
+    return db_obj
+
+
+def update_camera(*, session: Session, db_camera: Camera, updates: dict) -> Camera:
+    # Map updates to model fields
+    data = {}
+    if "name" in updates:
+        data["name"] = updates["name"]
+    if "location" in updates:
+        data["location"] = updates["location"]
+    if "source_url" in updates:
+        data["stream_url"] = updates["source_url"]
+    if "camera_type" in updates:
+        data["camera_type"] = updates["camera_type"]
+    if "status" in updates:
+        data["is_active"] = updates["status"] == "active"
+
+    db_camera.sqlmodel_update(data)
+    session.add(db_camera)
+    session.commit()
+    session.refresh(db_camera)
+    return db_camera
+
+
+def delete_camera(*, session: Session, db_camera: Camera) -> None:
+    session.delete(db_camera)
+    session.commit()

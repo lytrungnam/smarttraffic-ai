@@ -6,6 +6,7 @@ import cv2
 from sqlmodel import Session
 
 import app.services.frame_buffer as fb
+from app.ai.inference import _build_annotated_evidence
 from app.ai.ocr_reader import (
     read_plate_text,
 )
@@ -57,9 +58,8 @@ async def real_ai_detection_loop():
         )
         return
 
-    cap = cv2.VideoCapture(
-        _opencv_capture_source(settings.CAMERA_SOURCE)
-    )
+    cap_source = _opencv_capture_source(settings.CAMERA_SOURCE)
+    cap = cv2.VideoCapture(cap_source)
     if not cap.isOpened():
         logger.warning(
             "Unable to open CAMERA_SOURCE=%r; realtime AI detection loop stopped",
@@ -70,10 +70,43 @@ async def real_ai_detection_loop():
 
     frame_count = 0
 
+    consecutive_failures = 0
+    backoff = 1
     try:
         while True:
 
             ret, frame = cap.read()
+
+            if not ret:
+                consecutive_failures += 1
+                logger.debug("[AI] frame read failed (count=%d)", consecutive_failures)
+
+                # Attempt reconnect for camera streams (RTSP/IP). For file sources, reset to start.
+                if consecutive_failures > 5:
+                    logger.info("[AI] attempting to reopen capture source after failures")
+                    try:
+                        cap.release()
+                    except Exception:
+                        pass
+                    await asyncio.sleep(backoff)
+                    cap = cv2.VideoCapture(cap_source)
+                    if cap.isOpened():
+                        logger.info("[AI] re-opened capture source successfully")
+                        consecutive_failures = 0
+                        backoff = 1
+                    else:
+                        backoff = min(backoff * 2, 32)
+                        logger.warning("[AI] reopen failed, backing off %s seconds", backoff)
+                    await asyncio.sleep(0.5)
+                    continue
+
+                # For transient read errors (e.g., file loop), try rewinding and sleep briefly
+                cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                await asyncio.sleep(0.5)
+                continue
+
+            # reset failures counter on successful read
+            consecutive_failures = 0
 
             # Loop file sources and wait briefly for transient camera read failures.
             if not ret:
@@ -163,8 +196,32 @@ async def real_ai_detection_loop():
                     saved_plates.add(plate_text)
 
                     timestamp = int(time.time())
-                    image_path = f"storage/detections/{plate_text}_{timestamp}.jpg"
-                    cv2.imwrite(image_path, frame)
+                    safe_plate = "".join([c if c.isalnum() else "_" for c in plate_text])
+                    image_path = f"storage/detections/{safe_plate}_{timestamp}.jpg"
+
+                    # encode evidence bytes and save original
+                    encode_success, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+                    if encode_success:
+                        evidence_bytes = buffer.tobytes()
+                        try:
+                            with open(image_path, 'wb') as f:
+                                f.write(evidence_bytes)
+                        except Exception:
+                            cv2.imwrite(image_path, frame)
+                    else:
+                        cv2.imwrite(image_path, frame)
+
+                    # try to build annotated evidence (best-effort)
+                    try:
+                        annotation_data = {"vehicles": vehicles, "plates": plates}
+                        annotated_bytes = _build_annotated_evidence(evidence_bytes, annotation_data)
+                        annotated_path = None
+                        if annotated_bytes:
+                            annotated_path = f"storage/detections/{safe_plate}_{timestamp}_annotated.jpg"
+                            with open(annotated_path, 'wb') as f:
+                                f.write(annotated_bytes)
+                    except Exception:
+                        annotated_path = None
 
                     with Session(engine) as session:
                         detection = Detection(
@@ -186,6 +243,12 @@ async def real_ai_detection_loop():
                                 if detection.created_at else None
                             ),
                         })
+
+                        if annotated_path:
+                            realtime_detection.update({
+                                "annotated_image_path": annotated_path,
+                                "annotated_evidence_path": annotated_path,
+                            })
 
                     print(f"[SAVED] {plate_text} ({vehicle_type})")
 

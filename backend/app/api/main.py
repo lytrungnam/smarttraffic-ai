@@ -9,6 +9,7 @@ from app.api.routes import (
     subscriptions,
     users,
     utils,
+    cameras,
     ws,
 )
 from app.core.config import settings
@@ -29,6 +30,9 @@ api_router.include_router(detection.router)
 
 # Analytics
 api_router.include_router(analytics.router)
+
+# Cameras
+api_router.include_router(cameras.router)
 
 # WebSocket
 api_router.include_router(ws.router)
