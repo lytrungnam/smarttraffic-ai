@@ -11,17 +11,20 @@ export default function CameraGrid() {
   const token = localStorage.getItem("access_token") ?? ""
 
   const [cameras, setCameras] = useState<CameraItem[]>([])
+  const [loading, setLoading] = useState(false)
   const [selectedCameraId, setSelectedCameraId] = useState<string | null>(null)
   const [showAdd, setShowAdd] = useState(false)
   const [editing, setEditing] = useState<CameraItem | null>(null)
 
   const fetch = async () => {
+    setLoading(true)
     try {
       const res = await listCameras()
       setCameras(res.data ?? [])
     } catch (err) {
       // ignore
     }
+    setLoading(false)
   }
 
   useEffect(() => {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { X } from "lucide-react"
+import { X, Plus } from "lucide-react"
 import { createCamera, updateCamera } from "@/services/cameraService"
 
 type Props = {
