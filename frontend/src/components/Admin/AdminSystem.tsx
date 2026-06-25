@@ -7,7 +7,7 @@ import {
 
 const systems = [
   {
-    title: "YOLOv5 Detection",
+    title: "YOLOv11 Detection",
     status: "Operational",
     icon: Activity,
     color: "text-cyan-400",

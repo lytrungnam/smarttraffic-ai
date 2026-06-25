@@ -8,7 +8,7 @@ import { getAnalyticsSummary } from "@/services/analyticsService"
 const heroStats = [
   {
     title: "Detection Model",
-    value: "YOLOv5",
+    value: "YOLOv11",
     status: "ACTIVE",
     icon: ScanSearch,
     color: "cyan",

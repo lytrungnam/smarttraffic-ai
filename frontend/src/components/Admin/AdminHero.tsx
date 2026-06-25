@@ -89,7 +89,7 @@ export default function AdminHero() {
               text-cyan-400
             "
           >
-            YOLOv5 + OCR ONLINE
+            YOLOv11 + OCR ONLINE
           </h3>
         </div>
       </div>
