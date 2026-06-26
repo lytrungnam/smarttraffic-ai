@@ -11,20 +11,17 @@ export default function CameraGrid() {
   const token = localStorage.getItem("access_token") ?? ""
 
   const [cameras, setCameras] = useState<CameraItem[]>([])
-  const [, setLoading] = useState(false)
   const [selectedCameraId, setSelectedCameraId] = useState<string | null>(null)
   const [showAdd, setShowAdd] = useState(false)
   const [editing, setEditing] = useState<CameraItem | null>(null)
 
   const fetch = async () => {
-    setLoading(true)
     try {
       const res = await listCameras()
       setCameras(res.data ?? [])
     } catch (err) {
       // ignore
     }
-    setLoading(false)
   }
 
   useEffect(() => {
@@ -55,15 +52,17 @@ export default function CameraGrid() {
           <p className="mt-1 text-sm text-zinc-400">Register camera sources to preview streams and manage connections.</p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowAdd(true)}
-            className="inline-flex items-center gap-2 rounded-md bg-cyan-500 px-3 py-2 text-black"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Add Camera</span>
-          </button>
-        </div>
+        {cameras.length > 0 ? (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowAdd(true)}
+              className="inline-flex items-center gap-2 rounded-md bg-cyan-500 px-3 py-2 text-black"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Add Camera</span>
+            </button>
+          </div>
+        ) : null}
       </div>
 
       {/* GRID */}
@@ -73,7 +72,7 @@ export default function CameraGrid() {
             <CameraIcon className="h-8 w-8 text-zinc-500" />
           </div>
           <h2 className="mt-5 text-lg font-semibold text-white">No cameras registered</h2>
-          <button onClick={() => setShowAdd(true)} className="mt-4 rounded-md border px-4 py-2">+ Add Camera</button>
+          <button onClick={() => setShowAdd(true)} className="mt-4 rounded-md border px-4 py-2">Add First Camera</button>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 sm:gap-6">
