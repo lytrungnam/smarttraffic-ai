@@ -7,6 +7,9 @@ export type PlateResult = {
   vehicle_type: string
   confidence: number
   status: string
+  box?: [number, number, number, number]
+  box_source_width?: number
+  box_source_height?: number
 }
 
 export type StreamDetection = {
@@ -29,16 +32,21 @@ function buildWsUrl(baseHttpUrl: string) {
   if (baseHttpUrl.startsWith("https://")) {
     return baseHttpUrl.replace("https://", "wss://")
   }
-
   if (baseHttpUrl.startsWith("http://")) {
     return baseHttpUrl.replace("http://", "ws://")
   }
-
   return baseHttpUrl
 }
 
+// Chuẩn hóa confidence về dạng 0–100
+// Model có thể trả 0.95 (float) hoặc 95 (int) — đều phải về 95
+function normalizeConfidence(raw: number): number {
+  if (raw <= 1.0) return Math.round(raw * 100)
+  return Math.round(raw)
+}
+
 export function useWebSocketStream(
-  captureAndSend: (ws: WebSocket, intervalMs?: number) => void,
+  captureAndSend: (ws: WebSocket, intervalMs?: number) => void | Promise<void>,
 ) {
   const [state, setState] = useState<StreamState>({
     isConnected: false,
@@ -92,7 +100,7 @@ export function useWebSocketStream(
           }
         }
       } catch {
-        // fallback wsUrl ở trên
+        // dùng fallback wsUrl ở trên
       }
 
       const params = new URLSearchParams({
@@ -116,13 +124,21 @@ export function useWebSocketStream(
           error: null,
         }))
 
-        captureRef.current(ws, 500)
+        // Gọi captureAndSend — hỗ trợ cả sync lẫn async
+        Promise.resolve(captureRef.current(ws, 500)).catch((err) => {
+          if (import.meta.env.DEV) {
+            console.warn("[WS] captureAndSend error:", err)
+          }
+        })
       }
 
       ws.onmessage = (event: MessageEvent) => {
         try {
           const data = JSON.parse(event.data as string) as StreamDetection
-          const plates = data.plates ?? []
+          const plates = (data.plates ?? []).map((p) => ({
+            ...p,
+            confidence: normalizeConfidence(p.confidence),
+          }))
 
           setState((s) => ({
             ...s,
@@ -146,18 +162,12 @@ export function useWebSocketStream(
         }))
 
         if (event.code === 4002) {
-          setState((s) => ({
-            ...s,
-            error: "daily_limit_exceeded",
-          }))
+          setState((s) => ({ ...s, error: "daily_limit_exceeded" }))
           return
         }
 
         if (event.code === 4003) {
-          setState((s) => ({
-            ...s,
-            error: "camera_limit_exceeded",
-          }))
+          setState((s) => ({ ...s, error: "camera_limit_exceeded" }))
           return
         }
 
@@ -216,7 +226,6 @@ export function useWebSocketStream(
       if (retryRef.current) {
         clearTimeout(retryRef.current)
       }
-
       wsRef.current?.close()
     }
   }, [])

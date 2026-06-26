@@ -12,6 +12,7 @@ export type MobileCameraState = {
   torchOn: boolean
 }
 
+// Độ phân giải canvas capture (phải trùng với backend resize target)
 const CANVAS_W = 960
 const CANVAS_H = 540
 
@@ -35,7 +36,6 @@ export function useMobileCamera() {
       clearInterval(intervalRef.current)
       intervalRef.current = null
     }
-
     if (fpsTimerRef.current) {
       clearInterval(fpsTimerRef.current)
       fpsTimerRef.current = null
@@ -47,27 +47,45 @@ export function useMobileCamera() {
     streamRef.current = null
   }, [])
 
-  const waitForVideoReady = useCallback(async () => {
+  /**
+   * Chờ cho đến khi video element thực sự có frame data.
+   * Trả về true nếu ready trong 5 giây, false nếu timeout.
+   */
+  const waitForVideoReady = useCallback(async (): Promise<boolean> => {
     const video = videoRef.current
-
     if (!video) return false
 
+    // Đã sẵn sàng ngay
     if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
       return true
     }
 
-    return await new Promise<boolean>((resolve) => {
-      const timeout = window.setTimeout(() => {
+    return new Promise<boolean>((resolve) => {
+      const timeoutId = window.setTimeout(() => {
+        cleanup()
+        if (import.meta.env.DEV) {
+          console.warn("[MobileCamera] waitForVideoReady timeout")
+        }
         resolve(false)
-      }, 3000)
+      }, 5000)
 
-      const done = () => {
-        window.clearTimeout(timeout)
-        resolve(true)
+      const cleanup = () => {
+        window.clearTimeout(timeoutId)
+        video.removeEventListener("canplay", onReady)
+        video.removeEventListener("loadedmetadata", onReady)
+        video.removeEventListener("loadeddata", onReady)
       }
 
-      video.onloadedmetadata = done
-      video.oncanplay = done
+      const onReady = () => {
+        if (video.videoWidth > 0 && video.videoHeight > 0) {
+          cleanup()
+          resolve(true)
+        }
+      }
+
+      video.addEventListener("canplay", onReady)
+      video.addEventListener("loadedmetadata", onReady)
+      video.addEventListener("loadeddata", onReady)
     })
   }, [])
 
@@ -87,7 +105,6 @@ export function useMobileCamera() {
         } else {
           setError("Trình duyệt không hỗ trợ camera. Dùng Chrome/Safari mới hơn.")
         }
-
         return
       }
 
@@ -106,12 +123,10 @@ export function useMobileCamera() {
         })
 
         streamRef.current = newStream
-        setIsStreaming(true)
         setFacingMode(facing)
         setTorchOn(false)
 
         const video = videoRef.current
-
         if (video) {
           video.srcObject = newStream
           video.muted = true
@@ -120,8 +135,18 @@ export function useMobileCamera() {
           try {
             await video.play()
           } catch {
-            // iOS đôi khi cần user gesture, nhưng preview thường vẫn chạy
+            // iOS/Android đôi khi throw nếu không có user gesture, nhưng preview vẫn chạy
           }
+        }
+
+        setIsStreaming(true)
+
+        if (import.meta.env.DEV) {
+          const track = newStream.getVideoTracks()[0]
+          const settings = track?.getSettings()
+          console.info(
+            `[MobileCamera] started ${facing} ${settings?.width}x${settings?.height}`,
+          )
         }
       } catch (err) {
         const name = (err as Error).name ?? ""
@@ -167,28 +192,39 @@ export function useMobileCamera() {
       await track.applyConstraints({
         advanced: [{ torch: !torchOn } as MediaTrackConstraintSet],
       })
-
-      setTorchOn((value) => !value)
+      setTorchOn((v) => !v)
     } catch {
-      // Thiết bị không hỗ trợ flash thì bỏ qua
+      // Thiết bị không hỗ trợ flash — bỏ qua
     }
   }, [torchOn])
 
+  /**
+   * Chờ video ready, sau đó bắt đầu capture và gửi frame qua WebSocket.
+   * Hàm này là async — caller phải await hoặc dùng Promise.resolve().
+   */
   const captureAndSend = useCallback(
-    async (ws: WebSocket, intervalMs = 700) => {
+    async (ws: WebSocket, intervalMs = 500) => {
       clearTimers()
-
       fpsCountRef.current = 0
       setFramesSent(0)
       setFps(0)
 
+      // Đợi video thực sự có data trước khi gửi frame
       const ready = await waitForVideoReady()
 
       if (!ready) {
-        setError("Camera chưa sẵn sàng để gửi frame. Hãy bấm Dừng rồi Bắt đầu lại.")
+        if (import.meta.env.DEV) {
+          console.warn("[MobileCamera] video not ready after timeout, aborting captureAndSend")
+        }
+        setError("Camera chưa sẵn sàng. Hãy bấm Dừng rồi Bắt đầu lại.")
         return
       }
 
+      if (import.meta.env.DEV) {
+        console.info("[MobileCamera] video ready — starting frame capture loop")
+      }
+
+      // FPS counter cập nhật mỗi giây
       fpsTimerRef.current = setInterval(() => {
         setFps(fpsCountRef.current)
         fpsCountRef.current = 0
@@ -213,21 +249,24 @@ export function useMobileCamera() {
 
         const base64 = canvas.toDataURL("image/jpeg", 0.65)
 
+        // Sanity check: base64 quá ngắn = frame hỏng
         if (!base64 || base64.length < 1000) return
 
         ws.send(base64)
-
         fpsCountRef.current += 1
-        setFramesSent((value) => value + 1)
+        setFramesSent((n) => n + 1)
       }
 
+      // Gửi frame đầu tiên ngay lập tức
       sendFrame()
 
+      // Sau đó gửi định kỳ
       intervalRef.current = setInterval(sendFrame, intervalMs)
     },
     [clearTimers, waitForVideoReady],
   )
 
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
       clearTimers()

@@ -26,27 +26,23 @@ from app.services.websocket_service import manager
 
 router = APIRouter(prefix="/stream", tags=["stream"])
 
+AI_FRAME_W = 960
+AI_FRAME_H = 540
 
-# ── Config endpoint ────────────────────────────────────────────────────────────
 
 @router.get("/config")
 async def stream_config(request: Request):
-    """
-    Trả về WebSocket URL cho mobile client.
-
-    Local:
-      http://localhost:8000 -> ws://localhost:8000
-
-    Deploy Railway/Vercel:
-      https://... -> wss://...
-    """
     host_header = (
         request.headers.get("x-forwarded-host")
         or request.headers.get("host")
         or "localhost:8000"
     )
 
-    proto = request.headers.get("x-forwarded-proto", "http")
+    proto = request.headers.get("x-forwarded-proto")
+
+    if not proto:
+        proto = request.url.scheme
+
     ws_scheme = "wss" if proto == "https" else "ws"
 
     return {
@@ -59,11 +55,11 @@ async def stream_config(request: Request):
     }
 
 
-# ── Helpers ────────────────────────────────────────────────────────────────────
-
-def _decode_frame(data: str) -> np.ndarray | None:
-    """Base64 data URL hoặc raw base64 → numpy BGR frame."""
+def _decode_frame(data: str) -> Optional[np.ndarray]:
     try:
+        if not data:
+            return None
+
         if "," in data:
             data = data.split(",", 1)[1]
 
@@ -76,13 +72,7 @@ def _decode_frame(data: str) -> np.ndarray | None:
         return None
 
 
-def _normalize_camera_id(value: Optional[str]) -> uuid.UUID | None:
-    """
-    Nhận camera_id từ query params.
-
-    Nếu frontend truyền UUID thật thì lưu vào DB.
-    Nếu frontend truyền số tạm thời thì bỏ qua để tránh lỗi foreign key.
-    """
+def _normalize_camera_id(value: Optional[str]) -> Optional[uuid.UUID]:
     if not value:
         return None
 
@@ -92,9 +82,32 @@ def _normalize_camera_id(value: Optional[str]) -> uuid.UUID | None:
         return None
 
 
+def _normalize_confidence(raw: float) -> float:
+    try:
+        value = float(raw)
+    except Exception:
+        return 0.0
+
+    if value <= 1.0:
+        return round(value * 100, 1)
+
+    return round(value, 1)
+
+
+def _normalize_plate_text(value: Optional[str]) -> str:
+    if not value:
+        return "UNKNOWN"
+
+    text = str(value).strip().upper()
+
+    if not text:
+        return "UNKNOWN"
+
+    return text
+
+
 def _run_ai(frame: np.ndarray) -> list[dict]:
-    """Chạy full AI pipeline trên một frame. Blocking — gọi qua executor."""
-    frame = cv2.resize(frame, (960, 540))
+    frame = cv2.resize(frame, (AI_FRAME_W, AI_FRAME_H))
 
     vehicles = detect_vehicles(frame)
     plates = detect_plate(frame)
@@ -102,18 +115,36 @@ def _run_ai(frame: np.ndarray) -> list[dict]:
     results: list[dict] = []
 
     for plate in plates:
-        x1, y1, x2, y2 = plate["box"]
+        box = plate.get("box")
+
+        if not box or len(box) != 4:
+            continue
+
+        x1, y1, x2, y2 = map(int, box)
+
+        x1 = max(0, min(x1, AI_FRAME_W - 1))
+        y1 = max(0, min(y1, AI_FRAME_H - 1))
+        x2 = max(0, min(x2, AI_FRAME_W))
+        y2 = max(0, min(y2, AI_FRAME_H))
+
+        if x2 <= x1 or y2 <= y1:
+            continue
+
         crop = frame[y1:y2, x1:x2]
 
-        plate_text = read_plate_text(crop) or "UNKNOWN"
-        vehicle_type = get_vehicle_type_from_plate(plate["box"], vehicles)
+        plate_text = _normalize_plate_text(read_plate_text(crop))
+        vehicle_type = get_vehicle_type_from_plate([x1, y1, x2, y2], vehicles)
+        confidence = _normalize_confidence(float(plate.get("confidence") or 0))
 
         results.append(
             {
                 "plate_number": plate_text,
-                "vehicle_type": vehicle_type,
-                "confidence": round(float(plate["confidence"]), 2),
+                "vehicle_type": vehicle_type or "unknown",
+                "confidence": confidence,
                 "status": "detected",
+                "box": [x1, y1, x2, y2],
+                "box_source_width": AI_FRAME_W,
+                "box_source_height": AI_FRAME_H,
             }
         )
 
@@ -122,19 +153,17 @@ def _run_ai(frame: np.ndarray) -> list[dict]:
 
 def _save_detections_to_db(
     plates: list[dict],
-    camera_id: uuid.UUID | None,
-) -> None:
-    """Lưu kết quả nhận diện từ mobile camera vào PostgreSQL."""
+    camera_id: Optional[uuid.UUID],
+) -> int:
     if not plates:
-        return
+        return 0
+
+    saved = 0
 
     with Session(engine) as session:
-        saved_count = 0
-
         for plate in plates:
-            plate_number = plate.get("plate_number") or "UNKNOWN"
+            plate_number = _normalize_plate_text(plate.get("plate_number"))
 
-            # Không lưu kết quả OCR rỗng/không đọc được
             if plate_number == "UNKNOWN":
                 continue
 
@@ -148,37 +177,24 @@ def _save_detections_to_db(
             )
 
             session.add(detection)
-            saved_count += 1
+            saved += 1
 
-        if saved_count > 0:
+        if saved > 0:
             session.commit()
 
+    return saved
 
-# ── Mobile WebSocket ───────────────────────────────────────────────────────────
 
 @router.websocket("/mobile")
 async def mobile_stream(websocket: WebSocket):
-    """
-    WebSocket dành riêng cho mobile camera.
-
-    Mobile gửi:
-      base64 JPEG mỗi 500ms
-
-    Backend trả về:
-      { plates, vehicle_count, processing_ms, source: "mobile" }
-
-    Nếu nhận diện được biển số:
-      - lưu vào DB
-      - broadcast tới Dashboard WebSocket
-    """
     await websocket.accept()
 
     loop = asyncio.get_running_loop()
     frames_received = 0
 
-    camera_id = _normalize_camera_id(
-        websocket.query_params.get("camera_id")
-    )
+    camera_id = _normalize_camera_id(websocket.query_params.get("camera_id"))
+
+    print(f"[MOBILE WS] connected camera_id={camera_id}")
 
     try:
         while True:
@@ -192,46 +208,62 @@ async def mobile_stream(websocket: WebSocket):
                     {
                         "error": "invalid_frame",
                         "frames_received": frames_received,
+                        "source": "mobile",
                     }
                 )
                 continue
 
             t0 = time.monotonic()
 
-            # AI chạy trong thread pool để không block event loop
-            plates = await loop.run_in_executor(
-                None,
-                _run_ai,
-                frame,
-            )
+            plates = await loop.run_in_executor(None, _run_ai, frame)
 
-            # Lưu DB nếu có biển số hợp lệ
+            processing_ms = round((time.monotonic() - t0) * 1000)
+
+            saved_count = 0
+
             if plates:
-                await loop.run_in_executor(
+                saved_count = await loop.run_in_executor(
                     None,
                     _save_detections_to_db,
                     plates,
                     camera_id,
                 )
 
-            processing_ms = round((time.monotonic() - t0) * 1000)
-
             result = {
                 "plates": plates,
                 "vehicle_count": len(plates),
                 "processing_ms": processing_ms,
-                "source": "mobile",
                 "frames_received": frames_received,
+                "saved_count": saved_count,
+                "source": "mobile",
                 "tracks": [],
                 "events": [],
             }
 
             await websocket.send_json(result)
 
-            if plates:
+            valid_plates = [
+                plate
+                for plate in plates
+                if _normalize_plate_text(plate.get("plate_number")) != "UNKNOWN"
+            ]
+
+            if valid_plates:
                 await manager.broadcast(result)
+
+            if frames_received % 20 == 0:
+                print(
+                    f"[MOBILE WS] frames={frames_received} "
+                    f"plates={len(plates)} saved={saved_count} "
+                    f"processing_ms={processing_ms}"
+                )
 
     except WebSocketDisconnect:
         print(f"[MOBILE WS] disconnected after {frames_received} frames")
+
     except Exception as exc:
-        print(f"[MOBILE WS] Error after {frames_received} frames: {exc}")
+        print(f"[MOBILE WS] error after {frames_received} frames: {exc}")
+        try:
+            await websocket.close()
+        except Exception:
+            pass
