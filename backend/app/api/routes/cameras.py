@@ -4,7 +4,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import func, select
 
-from app.api.deps import SessionDep, get_current_active_user
+from app.api.deps import SessionDep, get_current_user
 from app.schemas.camera import (
     CameraCreate,
     CameraPublic,
@@ -106,7 +106,7 @@ def list_cameras(
 @router.post(
     "/",
     response_model=CameraPublic,
-    dependencies=[Depends(get_current_active_user)],
+    dependencies=[Depends(get_current_user)],
 )
 def create_camera(
     session: SessionDep,
@@ -160,7 +160,7 @@ def get_camera(
 @router.put(
     "/{camera_id}",
     response_model=CameraPublic,
-    dependencies=[Depends(get_current_active_user)],
+    dependencies=[Depends(get_current_user)],
 )
 def update_camera(
     camera_id: uuid.UUID,
@@ -206,7 +206,7 @@ def update_camera(
 
 @router.delete(
     "/{camera_id}",
-    dependencies=[Depends(get_current_active_user)],
+    dependencies=[Depends(get_current_user)],
 )
 def delete_camera(
     camera_id: uuid.UUID,
