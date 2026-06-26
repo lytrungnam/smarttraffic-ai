@@ -14,8 +14,11 @@ class CameraBase(SQLModel):
     name: str = Field(max_length=255)
     location: str = Field(max_length=255)
 
-    stream_url: str
-    camera_type: str = Field(default="traffic")
+    # URL hoặc "mobile"
+    stream_url: str = Field(default="")
+
+    # webcam | rtsp | ip_camera | video_file | mobile
+    camera_type: str = Field(default="webcam", max_length=50)
 
     is_active: bool = True
 
@@ -45,6 +48,8 @@ class CameraUpdate(SQLModel):
     location: Optional[str] = None
 
     stream_url: Optional[str] = None
+
+    camera_type: Optional[str] = None
 
     is_active: Optional[bool] = None
 
