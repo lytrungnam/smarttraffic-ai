@@ -237,7 +237,7 @@ export default function MobileCameraStream({ token = "", cameraId = 99 }: Props)
                     {formatPlateNumber(latest.plate_number)}
                   </p>
                   <p className="mt-0.5 text-sm text-zinc-400">
-                    {getVehicleClassLabel(latest.vehicle_type)} · Confidence: {Math.round(latest.confidence * 100)}%
+                    {getVehicleClassLabel(latest.vehicle_type)} · Confidence: {Math.round(latest.confidence )}%
                   </p>
                   <p className="mt-0.5 text-xs text-zinc-600">
                     {new Date().toLocaleTimeString("vi-VN")}
@@ -267,7 +267,9 @@ export default function MobileCameraStream({ token = "", cameraId = 99 }: Props)
                     {getVehicleClassLabel(d.vehicle_type)}
                   </p>
                 </div>
-                <span className="text-xs text-cyan-400">{Math.round(d.confidence * 100)}%</span>
+                <span className="text-xs text-cyan-400">{Math.round(d.confidence 
+                
+                )}%</span>
               </div>
             ))}
           </div>
