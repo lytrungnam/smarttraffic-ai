@@ -12,20 +12,7 @@ type Props = {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-type PlateWithBox = PlateResult & {
-  box: [number, number, number, number]
-}
-
-function hasValidBox(plate: PlateResult): plate is PlateWithBox {
-  return Array.isArray(plate.box) && plate.box.length === 4
-}
-
-function normalizeConfidence(confidence: number) {
-  if (!Number.isFinite(confidence)) return 0
-  if (confidence <= 1) return Math.round(confidence * 100)
-  return Math.round(confidence)
-}
-
+// Vẽ bounding box + label lên overlay canvas
 function drawBoxes(
   canvas: HTMLCanvasElement,
   plates: PlateResult[],
@@ -34,6 +21,7 @@ function drawBoxes(
   const ctx = canvas.getContext("2d")
   if (!ctx) return
 
+  // Khớp kích thước canvas với video hiển thị thực tế
   const rect = videoEl.getBoundingClientRect()
   canvas.width = rect.width
   canvas.height = rect.height
@@ -41,20 +29,13 @@ function drawBoxes(
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 
   for (const plate of plates) {
-    if (!hasValidBox(plate)) continue
+    if (!plate.box || plate.box.length < 4) continue
 
     const [bx1, by1, bx2, by2] = plate.box
+    const srcW = plate.box_source_width ?? 960
+    const srcH = plate.box_source_height ?? 540
 
-    const srcW =
-      plate.box_source_width && plate.box_source_width > 0
-        ? plate.box_source_width
-        : videoEl.videoWidth || 960
-
-    const srcH =
-      plate.box_source_height && plate.box_source_height > 0
-        ? plate.box_source_height
-        : videoEl.videoHeight || 540
-
+    // Scale từ AI coordinate space về canvas display space
     const scaleX = canvas.width / srcW
     const scaleY = canvas.height / srcH
 
@@ -63,6 +44,7 @@ function drawBoxes(
     const w = (bx2 - bx1) * scaleX
     const h = (by2 - by1) * scaleY
 
+    // Box viền cyan
     ctx.strokeStyle = "#22d3ee"
     ctx.lineWidth = 2
     ctx.shadowColor = "#22d3ee"
@@ -70,27 +52,28 @@ function drawBoxes(
     ctx.strokeRect(x, y, w, h)
     ctx.shadowBlur = 0
 
+    // Nền label
     const label = formatPlateNumber(plate.plate_number)
     const vehicleLabel = getVehicleClassLabel(plate.vehicle_type)
-    const confLabel = `${normalizeConfidence(plate.confidence)}%`
+    const confLabel = `${plate.confidence}%`
 
     ctx.font = "bold 13px monospace"
-
     const textW = Math.max(
       ctx.measureText(label).width,
       ctx.measureText(`${vehicleLabel} · ${confLabel}`).width,
     )
-
     const labelH = 38
     const labelY = y > labelH + 4 ? y - labelH - 4 : y + h + 4
 
     ctx.fillStyle = "rgba(0,0,0,0.75)"
     ctx.fillRect(x, labelY, textW + 12, labelH)
 
+    // Plate text
     ctx.fillStyle = "#22d3ee"
     ctx.font = "bold 13px monospace"
     ctx.fillText(label, x + 6, labelY + 14)
 
+    // Vehicle type + confidence
     ctx.fillStyle = "#ffffff"
     ctx.font = "11px sans-serif"
     ctx.fillText(`${vehicleLabel} · ${confLabel}`, x + 6, labelY + 30)
@@ -105,13 +88,15 @@ export default function MobileCameraStream({ token = "", cameraId = 99 }: Props)
 
   const latest = stream.detections[0] ?? null
 
+  // Vẽ lại box mỗi khi có detection mới
   useEffect(() => {
     const overlay = overlayRef.current
     const video = cam.videoRef.current
-
     if (!overlay || !video) return
 
-    const plates = stream.detections.filter(hasValidBox)
+    const plates = stream.detections.filter(
+      (d) => d.box && d.box.length === 4,
+    )
 
     if (plates.length === 0) {
       const ctx = overlay.getContext("2d")
@@ -122,7 +107,7 @@ export default function MobileCameraStream({ token = "", cameraId = 99 }: Props)
     drawBoxes(overlay, plates, video)
   }, [stream.detections, cam.videoRef])
 
-  const handleStart = useCallback(async () => {
+  const handleStart = async () => {
     if (starting || stream.isConnected || stream.isConnecting) return
 
     try {
@@ -132,33 +117,28 @@ export default function MobileCameraStream({ token = "", cameraId = 99 }: Props)
         await cam.startCamera("environment")
       }
 
+      // Đợi video element mount và srcObject bind xong
       await sleep(800)
 
       await stream.connect(cameraId, token)
     } finally {
       setStarting(false)
     }
-  }, [
-    starting,
-    stream,
-    cam,
-    cameraId,
-    token,
-  ])
+  }
 
-  const handleStop = useCallback(() => {
+  const handleStop = () => {
     stream.disconnect()
     cam.stopCamera()
     setStarting(false)
 
-    const overlay = overlayRef.current
-    const ctx = overlay?.getContext("2d")
-
-    if (ctx && overlay) {
-      ctx.clearRect(0, 0, overlay.width, overlay.height)
+    // Xóa overlay
+    const ctx = overlayRef.current?.getContext("2d")
+    if (ctx && overlayRef.current) {
+      ctx.clearRect(0, 0, overlayRef.current.width, overlayRef.current.height)
     }
-  }, [stream, cam])
+  }
 
+  // Cleanup khi unmount
   useEffect(() => {
     return () => {
       stream.disconnect()
@@ -167,6 +147,7 @@ export default function MobileCameraStream({ token = "", cameraId = 99 }: Props)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // === HTTPS ERROR SCREEN ===
   if (cam.error === "HTTPS_REQUIRED") {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center bg-zinc-950 p-6 text-white">
@@ -174,15 +155,10 @@ export default function MobileCameraStream({ token = "", cameraId = 99 }: Props)
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-yellow-500/30 bg-yellow-500/10">
             <span className="text-3xl">⚠️</span>
           </div>
-
-          <h2 className="text-lg font-semibold text-yellow-400">
-            Cần kết nối HTTPS
-          </h2>
-
+          <h2 className="text-lg font-semibold text-yellow-400">Cần kết nối HTTPS</h2>
           <p className="text-sm text-zinc-400">
             Chrome Android chỉ cho phép camera trên HTTPS hoặc localhost.
           </p>
-
           <button
             type="button"
             onClick={() => window.location.reload()}
@@ -195,6 +171,7 @@ export default function MobileCameraStream({ token = "", cameraId = 99 }: Props)
     )
   }
 
+  // === IDLE SCREEN ===
   if (!cam.isStreaming && !cam.error) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center bg-zinc-950 text-white">
@@ -207,19 +184,16 @@ export default function MobileCameraStream({ token = "", cameraId = 99 }: Props)
           <div className="flex h-24 w-24 items-center justify-center rounded-full border-2 border-cyan-500/40 bg-cyan-500/10 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
             <Camera className="h-10 w-10 text-cyan-400" />
           </div>
-
           <p className="text-lg font-semibold text-white">
             {starting ? "Đang bật camera..." : "Nhấn để bật camera"}
           </p>
-
-          <p className="text-sm text-zinc-500">
-            Camera sau — nhận diện biển số
-          </p>
+          <p className="text-sm text-zinc-500">Camera sau — nhận diện biển số</p>
         </button>
       </div>
     )
   }
 
+  // === ERROR SCREEN ===
   if (cam.error) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center bg-zinc-950 p-6 text-white">
@@ -227,9 +201,7 @@ export default function MobileCameraStream({ token = "", cameraId = 99 }: Props)
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-red-500/30 bg-red-500/10">
             <span className="text-3xl">📷</span>
           </div>
-
           <p className="text-sm text-red-400">{cam.error}</p>
-
           <button
             type="button"
             onClick={() => cam.startCamera("environment")}
@@ -242,41 +214,45 @@ export default function MobileCameraStream({ token = "", cameraId = 99 }: Props)
     )
   }
 
+  // === MAIN STREAM UI ===
   return (
     <div className="flex min-h-dvh flex-col bg-black text-white">
+
+      {/* VIDEO PREVIEW — 60% màn hình */}
       <div className="relative flex-[6] overflow-hidden bg-black">
+
+        {/* Video element */}
         <video
           ref={cam.videoRef}
           autoPlay
           playsInline
           muted
           className="h-full w-full object-cover"
-          style={{
-            transform: cam.facingMode === "user" ? "scaleX(-1)" : "none",
-          }}
+          style={{ transform: cam.facingMode === "user" ? "scaleX(-1)" : "none" }}
         />
 
+        {/* Overlay canvas vẽ bounding box — absolute trên video */}
         <canvas
           ref={overlayRef}
           className="pointer-events-none absolute inset-0 h-full w-full"
         />
 
+        {/* Hidden canvas để capture frame gửi backend */}
         <canvas ref={cam.canvasRef} className="hidden" />
 
+        {/* LIVE badge */}
         {stream.isConnected && (
           <div className="absolute right-3 top-3 flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-1">
             <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
-            <span className="text-xs font-bold tracking-wider text-white">
-              LIVE
-            </span>
+            <span className="text-xs font-bold tracking-wider text-white">LIVE</span>
           </div>
         )}
 
+        {/* FPS + processing time */}
         <div className="absolute left-3 top-3 flex flex-col gap-1">
           <div className="rounded-full bg-black/60 px-3 py-1 text-xs font-mono text-cyan-400 backdrop-blur-sm">
             {cam.fps} fps
           </div>
-
           {stream.lastProcessingMs > 0 && (
             <div className="rounded-full bg-black/60 px-3 py-1 text-xs font-mono text-emerald-400 backdrop-blur-sm">
               {stream.lastProcessingMs} ms
@@ -284,10 +260,12 @@ export default function MobileCameraStream({ token = "", cameraId = 99 }: Props)
           )}
         </div>
 
+        {/* Camera label */}
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-3 py-1 text-xs text-zinc-300 backdrop-blur-sm">
           {cam.facingMode === "environment" ? "Camera sau" : "Camera trước"}
         </div>
 
+        {/* Connecting overlay */}
         {(stream.isConnecting || starting) && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
             <div className="text-center">
@@ -298,8 +276,12 @@ export default function MobileCameraStream({ token = "", cameraId = 99 }: Props)
         )}
       </div>
 
+      {/* CONTROLS + RESULTS — 40% màn hình */}
       <div className="flex-[4] overflow-y-auto bg-zinc-950 px-4 py-4">
+
+        {/* Hàng 1: Controls */}
         <div className="mb-4 flex items-center justify-between gap-3">
+          {/* Đổi camera */}
           <button
             type="button"
             onClick={cam.flipCamera}
@@ -309,6 +291,7 @@ export default function MobileCameraStream({ token = "", cameraId = 99 }: Props)
             Đổi camera
           </button>
 
+          {/* Start / Stop */}
           <button
             type="button"
             onClick={stream.isConnected ? handleStop : handleStart}
@@ -320,18 +303,13 @@ export default function MobileCameraStream({ token = "", cameraId = 99 }: Props)
             }`}
           >
             {stream.isConnected ? (
-              <>
-                <Square className="h-5 w-5" />
-                Dừng
-              </>
+              <><Square className="h-5 w-5" /> Dừng</>
             ) : (
-              <>
-                <Play className="h-5 w-5" />
-                {starting ? "Đang bật" : "Bắt đầu"}
-              </>
+              <><Play className="h-5 w-5" /> {starting ? "Đang bật" : "Bắt đầu"}</>
             )}
           </button>
 
+          {/* Đèn flash */}
           <button
             type="button"
             onClick={cam.toggleTorch}
@@ -346,6 +324,7 @@ export default function MobileCameraStream({ token = "", cameraId = 99 }: Props)
           </button>
         </div>
 
+        {/* Error banner */}
         {stream.error &&
           stream.error !== "daily_limit_exceeded" &&
           stream.error !== "camera_limit_exceeded" && (
@@ -354,26 +333,23 @@ export default function MobileCameraStream({ token = "", cameraId = 99 }: Props)
             </div>
           )}
 
+        {/* Latest Detection card */}
         {latest ? (
           <div className="mb-4 overflow-hidden rounded-2xl border border-cyan-500/20 bg-zinc-900">
             <div className="bg-cyan-500/5 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-cyan-500">
               Latest Detection
             </div>
-
             <div className="px-4 py-4">
               <div className="flex items-center gap-3">
                 <span className="text-3xl">🚗</span>
-
                 <div>
                   <p className="text-2xl font-black tracking-widest text-white">
                     {formatPlateNumber(latest.plate_number)}
                   </p>
-
                   <p className="mt-0.5 text-sm text-zinc-400">
                     {getVehicleClassLabel(latest.vehicle_type)} · Confidence:{" "}
-                    {normalizeConfidence(latest.confidence)}%
+                    {latest.confidence}%
                   </p>
-
                   <p className="mt-0.5 text-xs text-zinc-600">
                     {new Date().toLocaleTimeString("vi-VN")}
                   </p>
@@ -384,13 +360,12 @@ export default function MobileCameraStream({ token = "", cameraId = 99 }: Props)
         ) : (
           stream.isConnected && (
             <div className="mb-4 flex h-24 items-center justify-center rounded-2xl border border-dashed border-white/10">
-              <p className="text-sm text-zinc-600">
-                Hướng camera vào biển số xe...
-              </p>
+              <p className="text-sm text-zinc-600">Hướng camera vào biển số xe...</p>
             </div>
           )
         )}
 
+        {/* Recent detections list */}
         {stream.detections.length > 1 && (
           <div className="mb-4 space-y-2">
             {stream.detections.slice(1, 5).map((d, i) => (
@@ -402,45 +377,32 @@ export default function MobileCameraStream({ token = "", cameraId = 99 }: Props)
                   <p className="text-sm font-semibold text-white">
                     {formatPlateNumber(d.plate_number)}
                   </p>
-
                   <p className="text-xs text-zinc-500">
                     {getVehicleClassLabel(d.vehicle_type)}
                   </p>
                 </div>
-
-                <span className="text-xs text-cyan-400">
-                  {normalizeConfidence(d.confidence)}%
-                </span>
+                <span className="text-xs text-cyan-400">{d.confidence}%</span>
               </div>
             ))}
           </div>
         )}
 
+        {/* Mini stats */}
         <div className="flex items-center justify-center gap-4 rounded-xl bg-zinc-900/40 px-4 py-2.5 text-xs text-zinc-500">
           <span>
             Nhận diện:{" "}
-            <span className="font-semibold text-white">
-              {stream.totalDetected}
-            </span>{" "}
-            xe
+            <span className="font-semibold text-white">{stream.totalDetected}</span> xe
           </span>
-
           <span className="h-3 w-px bg-zinc-700" />
-
           <span>
-            Frames:{" "}
-            <span className="font-semibold text-white">{cam.framesSent}</span>
+            Frames: <span className="font-semibold text-white">{cam.framesSent}</span>
           </span>
-
           {stream.lastProcessingMs > 0 && (
             <>
               <span className="h-3 w-px bg-zinc-700" />
-
               <span>
                 AI:{" "}
-                <span className="font-semibold text-white">
-                  {stream.lastProcessingMs}ms
-                </span>
+                <span className="font-semibold text-white">{stream.lastProcessingMs}ms</span>
               </span>
             </>
           )}
