@@ -1,8 +1,13 @@
 import uuid
 from datetime import datetime
 from typing import Optional
+from zoneinfo import ZoneInfo
 
 from sqlmodel import Field, Relationship, SQLModel
+
+
+def vietnam_now() -> datetime:
+    return datetime.now(ZoneInfo("Asia/Ho_Chi_Minh"))
 
 
 class DetectionBase(SQLModel):
@@ -29,6 +34,7 @@ class DetectionBase(SQLModel):
 
     speed: Optional[float] = None
 
+
 class Detection(DetectionBase, table=True):
     id: uuid.UUID = Field(
         default_factory=uuid.uuid4,
@@ -36,7 +42,7 @@ class Detection(DetectionBase, table=True):
     )
 
     created_at: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=vietnam_now,
         index=True,
     )
 
@@ -58,12 +64,19 @@ class DetectionUpdate(SQLModel):
     plate_number: Optional[str] = None
 
     vehicle_type: Optional[str] = None
+
     confidence: Optional[float] = None
+
     location: Optional[str] = None
+
     status: Optional[str] = None
+
     image_path: Optional[str] = None
 
+    cropped_plate_path: Optional[str] = None
+
     violation_type: Optional[str] = None
+
     speed: Optional[float] = None
 
 
