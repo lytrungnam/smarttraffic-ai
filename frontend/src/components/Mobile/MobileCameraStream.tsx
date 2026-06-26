@@ -1,5 +1,5 @@
 import { Camera, FlipHorizontal, Zap, Square, Play } from "lucide-react"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { getVehicleClassLabel } from "@/constants/vehicleClasses"
 import { useMobileCamera } from "@/hooks/useMobileCamera"
 import { type PlateResult, useWebSocketStream } from "@/hooks/useWebSocketStream"
